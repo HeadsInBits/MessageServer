@@ -2,7 +2,6 @@
 using System.Net.WebSockets;
 using Org.BouncyCastle.Security;
 
-
 namespace MessageServer;
 
 public class WebSocketServer
@@ -12,14 +11,7 @@ public class WebSocketServer
     private readonly HttpListener listener = new HttpListener();
     private readonly WebSocketHandler handler = new WebSocketHandler();
 
-    private List<User> connectedClients = new List<User>();
-
-    public List<User> ConnectedClients
-    {
-        get => connectedClients;
-        set => connectedClients = value ?? throw new ArgumentNullException(nameof(value));
-    }
-
+   
     private DBManager _dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
     
     private WebSocketServer()

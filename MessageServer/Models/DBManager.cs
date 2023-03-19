@@ -8,7 +8,8 @@ public class DBManager
 {
     private MySqlConnection connection;
     private string connectionString;
-
+    private bool logging = true;
+    
     public DBManager(string server, string database, string username, string password) {
         // Set up the connection string
         connectionString = $"Server={server};Database={database};User Id={username};Password={password};";
@@ -20,21 +21,34 @@ public class DBManager
 
     public bool ValidateAccount(String userName, String passWord)
     { 
-        String query = $"Select * From Users WHERE UserName like '{userName}' and Password like '{passWord}'";
-        Console.WriteLine("Sending Query: " + query );        
+       /*String query = $"Select * From Users WHERE UserName like '{userName}' and Password like '{passWord}'";
+       Console.WriteLine("Sending Query: " + query );        
        MySqlDataReader reader =  ExecuteQuery(query);
 
-       MySqlDataAdapter mySqlDataAdapter = new MySqlDataAdapter();
+       MySqlDataAdapter mySqlDataAdapter = new MySqlDataAdapter(query, connection);
       
        DataTable dt = new DataTable();
-       mySqlDataAdapter.Fill(dt);
-       dt.Load(reader);
-       int numberOfResults = dt.Rows.Count;
-       Console.WriteLine("Validate Account Found "+ numberOfResults + " Accounts");
+       mySqlDataAdapter.Fill(dt, "Users");
+       dt.Load(reader);*/
+
+       int numberOfResults;
+       
+       using (MySqlCommand cmd = new MySqlCommand($"Select * From Users WHERE UserName like '{userName}' and Password like '{passWord}'", connection))
+       {
+           cmd.CommandType = CommandType.Text;
+           using (MySqlDataAdapter sda = new MySqlDataAdapter(cmd))
+           {
+               using (DataTable dt = new DataTable())
+               {
+                   sda.Fill(dt);
+                   numberOfResults = dt.Rows.Count;
+               }
+           }
+       }
+       if(logging) 
+           Console.WriteLine("Validate Account Found "+ numberOfResults + " Accounts");
        return numberOfResults > 0;
-
     }
-
     
     public void CloseConnection() {
         try {

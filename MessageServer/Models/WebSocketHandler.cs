@@ -7,7 +7,9 @@ public class WebSocketHandler
 {
     private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
     private readonly WebSocket[] sockets = new WebSocket[10];
-   
+    private RoomController _roomController = new RoomController();
+    private UserController _userController = new UserController();
+    private bool logginEnabled = true;
 
     public void AddSocket(WebSocket socket)
     {
@@ -72,7 +74,7 @@ public class WebSocketHandler
 
     private void CommsToUser(string username, string message)
     {
-        foreach (var u in WebSocketServer.Instance.ConnectedClients)
+        foreach (var u in _userController.connectedClients)
         {
             if (u.GetUserName() == username)
             {
@@ -98,8 +100,8 @@ public class WebSocketHandler
         var returnMessage = new StringBuilder();
 
         returnMessage.Append("USERLIST:");
-        returnMessage.Append(WebSocketServer.Instance.ConnectedClients.Count + ":");
-        foreach (var user in WebSocketServer.Instance.ConnectedClients)
+        returnMessage.Append(_userController.connectedClients.Count + ":");
+        foreach (var user in _userController.connectedClients)
         {
             returnMessage.Append(":" + user.GetUserName());
         }
@@ -129,7 +131,7 @@ public class WebSocketHandler
                     if (tmpUser != null)
                     {
                         tmpUser.WebSocketID = index;
-                        WebSocketServer.Instance.ConnectedClients.Add(tmpUser);
+                        _userController.connectedClients.Add(tmpUser);
                         Console.WriteLine("Added User to Client list:" + tmpUser.WebSocketID +"User:" + tmpUser.GetUserName());
                         SendMessage(index, "AUTH:OK");
                     }
@@ -156,8 +158,9 @@ public class WebSocketHandler
                 CommsToAllButSender(index, messageChunks[1]);
                 break;
             
-            case "CREATEPRIVATEROOM":
-                CommsToAllButSender(index, messageChunks[1]);
+                case "CREATEPRIVATEROOM":
+                     int roomNumber =  _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index));
+                    
                 break; 
             default:
                 break;

@@ -11,6 +11,33 @@ public class RoomController
         return privateRooms.IndexOf(tmpRoom);
     }
 
+    public List<int> FindUserInRooms(User user)
+    {
+        int counter = 0;
+
+        List<int> roomList = new List<int>();
+
+        foreach (var room in privateRooms)
+        {
+            foreach (var usr in room.GetUsersInRoom())
+            {
+                if (usr == user)
+                {
+                    roomList.Add(item: counter);
+                }
+            }
+
+            counter++;
+        }
+
+        return roomList;
+    }
+
+    public Room.RoomStatusCodes  AddUserToRoom(User userToAdd, int roomNumber)
+    {
+        return privateRooms[roomNumber].AddUserToRoom(userToAdd);
+    }
+
     public void DestroyRoom(int index)
     {
         privateRooms.RemoveAt(index);
