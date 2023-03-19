@@ -11,6 +11,11 @@ public class RoomController
         return privateRooms.IndexOf(tmpRoom);
     }
 
+    public List<User> GetUsersInRoom(int roomId)
+    {
+        return privateRooms[roomId].GetUsersInRoom();
+    }
+
     public List<int> FindUserInRooms(User user)
     {
         int counter = 0;
@@ -33,7 +38,12 @@ public class RoomController
         return roomList;
     }
 
-    public Room.RoomStatusCodes  AddUserToRoom(User userToAdd, int roomNumber)
+    public List<Room> GetRoomList()
+    {
+        return privateRooms;
+    }
+
+    public Room.RoomStatusCodes AddUserToRoom(User userToAdd, int roomNumber)
     {
         return privateRooms[roomNumber].AddUserToRoom(userToAdd);
     }

@@ -17,4 +17,17 @@ public class UserController
 
         return null;
     }
+
+    public User? GetUserProfileFromUserName(string username)
+    {
+        foreach (var usr in connectedClients)
+        {
+            if (usr.GetUserName() == username)
+            {
+                return usr;
+            }
+        }
+
+        return null;
+    }
 }

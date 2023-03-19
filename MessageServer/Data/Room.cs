@@ -31,6 +31,16 @@ public class Room
         
     }
 
+    public String GetRoomName()
+    {
+        return RoomName;
+    }
+
+    public Guid GetGuid()
+    {
+        return RoomID;
+    }
+
     public RoomStatusCodes AddUserToRoom(User usrToAdd)
     {
         if (isRoomLocked)

@@ -1,4 +1,5 @@
 ﻿using System.Net.WebSockets;
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace MessageServer;
@@ -57,13 +58,11 @@ public class WebSocketHandler
                     _userController.connectedClients.Remove(_userController.GetUserProfileFromSocketId(index));
                     await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
                         CancellationToken.None);
-
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("SERVER EXCEPTION!!!: "+ ex.Message);
                 }
-
                 break;
             }
             else if (result.MessageType == WebSocketMessageType.Binary ||
@@ -74,9 +73,6 @@ public class WebSocketHandler
                 Console.WriteLine($"Received message from client {index}: {message}");
 
                 ProcessMessage(index, message);
-
-                // Send the message to all connected clients except the sender
-              
             }
 
         }
@@ -88,7 +84,7 @@ public class WebSocketHandler
         {
             if (u.GetUserName() == username)
             {
-                SendMessage(u.WebSocketID, message);
+                SendMessage(u.WebSocketID,"RECIEVEMESSAGE:"+ message);
             }
         }
     }
@@ -105,6 +101,31 @@ public class WebSocketHandler
         }
     }
 
+    private void SendUsersOfRoom(int index, int roomID)
+    {
+        var msg = new StringBuilder();
+        msg.Append("ROOMUSERLIST:");
+        msg.Append(":" + _roomController.GetUsersInRoom(roomID).Count);
+        foreach (var Usr in _roomController.GetUsersInRoom(roomID))
+        {
+            msg.Append(":" + Usr.GetUserName());
+        }
+        SendMessage(index, msg.ToString());
+    }
+
+    private void SendRoomList(int index)
+    {
+        var msg = new StringBuilder();
+        msg.Append("ROOMLIST");
+        msg.Append(":" + _roomController.GetRoomList().Count);
+        foreach (var room in _roomController.GetRoomList())
+        {
+            msg.Append($":{room.GetGuid()}");
+        }
+
+
+    }
+    
     private void GetUserList(int myIndex)
     {
         var returnMessage = new StringBuilder();
@@ -126,8 +147,11 @@ public class WebSocketHandler
     private void SendMessage(int index, string  message)
     {
       // sockets[index].SendAsync();
+    if(sockets[index] == null)
+        return;
+    
+      
       byte[] buffer = Encoding.UTF8.GetBytes(message);
-
       // Create a WebSocket message from the buffer
       var webSocketMessage = new ArraySegment<byte>(buffer);
       
@@ -145,8 +169,25 @@ public class WebSocketHandler
                     if (tmpUser != null)
                     {
                         tmpUser.WebSocketID = index;
-                        _userController.connectedClients.Add(tmpUser);
-                        Console.WriteLine("Added User to Client list:" + tmpUser.WebSocketID +"User:" + tmpUser.GetUserName());
+
+                        bool Unique = true;
+                        
+                        foreach (var usr in _userController.connectedClients)
+                        {
+                            if (usr.WebSocketID == index)
+                                Unique = false;
+                        }
+
+                        if (Unique)
+                        {
+                            _userController.connectedClients.Add(tmpUser);
+                            Console.WriteLine("Added User to Client list:" + tmpUser.WebSocketID +"User:" + tmpUser.GetUserName());     
+                        }
+                        else
+                        {
+                            Console.WriteLine("User Already Authenticated: "+ tmpUser.WebSocketID +"User:" + tmpUser.GetUserName());
+                        }
+                       
                         SendMessage(index, "AUTH:OK");
                     }
                     else // not authenticated
@@ -165,6 +206,7 @@ public class WebSocketHandler
                 break;
             
             case "SENDMESGTOUSER":
+                Console.WriteLine("Sending a Direct Message to:" +  messageChunks[1]);
                 CommsToUser(messageChunks[1], messageChunks[2]);
                 break;
             
@@ -172,14 +214,28 @@ public class WebSocketHandler
                 CommsToAllButSender(index, messageChunks[1]);
                 break;
             
-                case "CREATEPRIVATEROOM":
-                     int roomNumber =  _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index));
-                    
+            case "CREATEPRIVATEROOM":
+                int roomNumber =  _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index));
                 break; 
+                
+            case "ADDUSERTOROOM":
+                    _roomController.AddUserToRoom(_userController.GetUserProfileFromUserName(messageChunks[1]), Int32.Parse(messageChunks[2]));
+                    break;
+            
+            case "LISTUSERSINROOM":
+                SendUsersOfRoom(index, Int32.Parse(messageChunks[1]));
+                break;
+            
+            case "GETROOMLIST":
+                SendRoomList(index);
+                break;
+                
             default:
                 break;
         }
     }
+
+   
 
     private User? ValidateUser(string message)
     {
