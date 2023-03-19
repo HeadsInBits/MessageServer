@@ -111,10 +111,14 @@ public class WebSocketHandler
 
         returnMessage.Append("USERLIST:");
         returnMessage.Append(_userController.connectedClients.Count + ":");
-        foreach (var user in _userController.connectedClients)
+        if (_userController.connectedClients.Count > 0)
         {
-            returnMessage.Append(":" + user.GetUserName());
+            foreach (var user in _userController.connectedClients)
+            {
+                returnMessage.Append(":" + user.GetUserName());
+            }
         }
+
         Console.WriteLine("SENDING USER LIST@@ " + returnMessage.ToString());
         SendMessage(myIndex, returnMessage.ToString());
     }
