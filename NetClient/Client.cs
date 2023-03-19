@@ -1,19 +1,26 @@
 ﻿using System.Collections.ObjectModel;
 using System.Net.WebSockets;
 using System.Security.Authentication;
+using System.Text;
 
 namespace NetClient;
 
 public class Client
 {
-        ClientWebSocket  webSocket = new ClientWebSocket();
+       ClientWebSocket  webSocket = new ClientWebSocket();
         Uri serverUri = new Uri("ws://localhost:8080/");
         
         private bool isClientValidated = false;
         private int ClientID;
+        private String ClientName;
         public ObservableCollection<string> networkUsers = new ObservableCollection<string>();
-     
+        public List<Guid> roomList = new List<Guid>();
+        public List<Guid> subscribedRooms = new List<Guid>();
 
+        ~Client(){
+            this.Disconnect();
+        }
+        
         public async Task Connect()
         {
             await webSocket.ConnectAsync(serverUri, CancellationToken.None);
@@ -32,17 +39,25 @@ public class Client
             }
         }
 
+        public List<Guid> GetRoomList()
+        { return roomList;
+        }
+   
+        
         public bool IsClientValidated()
         {
             return isClientValidated;
         }
+
+        public string GetClientName()
+        {
+            return ClientName;
+        }
+        
         public async void Disconnect()
         {
             await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Destroyed", CancellationToken.None);
         }
-
-
-
         private void ProcessIncomingMessage(string receivedMessage)
         {
             Console.WriteLine("INCOMING MESSAGE!: "+ receivedMessage);
@@ -71,9 +86,18 @@ public class Client
                     }
                     break;
                 case "RECIEVEMESSAGE":
-                   //Todo: Add an event to handle incoming datastreams.
+                  // MessageBox.Show("Message Recieved!" + MessageChunks[1]);
                     
-                    //  MessageBox.Show("Message Recieved!" + MessageChunks[1]);
+                    break;
+                
+                case "ROOMLIST":
+                    roomList.Clear();
+                    int numberOfRooms = Int32.Parse(MessageChunks[1]);
+
+                    for (int counter = 0; counter < numberOfRooms; counter++)
+                    {
+                        roomList.Add(Guid.Parse( MessageChunks[2+counter]));
+                    }
                     
                     break;
                 
@@ -90,11 +114,24 @@ public class Client
 
         }
 
+        public async Task CreateRoom(string userName)
+        {
+            var msg = new StringBuilder();
+            msg.Append("CREATEPRIVATEROOM");
+            await SendMessage(msg.ToString());
+        }
+
         public async Task UpdateUserList()
         {
             await SendMessage("GETUSERLIST");
         }
         
+        public async Task RefreshRoomList()
+        {
+            var msg = new StringBuilder();
+            msg.Append("GETROOMLIST");
+            await SendMessage(msg.ToString());
+        }
         
         public async Task Authenticate(string userName, string passWord)
         {
@@ -107,7 +144,7 @@ public class Client
             string msg = $"SENDMESGTOUSER:{userName}:{Message}";
             await SendMessage(msg);
         }
-        
+
 }
     
 

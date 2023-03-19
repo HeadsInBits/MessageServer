@@ -106,9 +106,12 @@ public class WebSocketHandler
         var msg = new StringBuilder();
         msg.Append("ROOMUSERLIST:");
         msg.Append(":" + _roomController.GetUsersInRoom(roomID).Count);
-        foreach (var Usr in _roomController.GetUsersInRoom(roomID))
+        if (_roomController.GetUsersInRoom(roomID).Count > 0)
         {
-            msg.Append(":" + Usr.GetUserName());
+            foreach (var Usr in _roomController.GetUsersInRoom(roomID))
+            {
+                msg.Append(":" + Usr.GetUserName());
+            }
         }
         SendMessage(index, msg.ToString());
     }
@@ -118,10 +121,15 @@ public class WebSocketHandler
         var msg = new StringBuilder();
         msg.Append("ROOMLIST");
         msg.Append(":" + _roomController.GetRoomList().Count);
-        foreach (var room in _roomController.GetRoomList())
+        if (_roomController.GetRoomList().Count > 0)
         {
-            msg.Append($":{room.GetGuid()}");
+            foreach (var room in _roomController.GetRoomList())
+            {
+                msg.Append($":{room.GetGuid()}");
+            }
         }
+
+        SendMessage(index,msg.ToString());
 
 
     }
