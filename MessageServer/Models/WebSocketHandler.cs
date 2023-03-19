@@ -5,8 +5,9 @@ namespace MessageServer;
 
 public class WebSocketHandler
 {
-     private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
+    private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
     private readonly WebSocket[] sockets = new WebSocket[10];
+   
 
     public void AddSocket(WebSocket socket)
     {
@@ -63,15 +64,7 @@ public class WebSocketHandler
                 ProcessMessage(index, message);
 
                 // Send the message to all connected clients except the sender
-                for (int i = 0; i < sockets.Length; i++)
-                {
-                    if (sockets[i] != null && i != index)
-                    {
-                        await sockets[i].SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType,
-                            result.EndOfMessage, CancellationToken.None);
-                    }
-
-                }
+              
             }
 
         }
@@ -85,6 +78,18 @@ public class WebSocketHandler
             {
                 SendMessage(u.WebSocketID, message);
             }
+        }
+    }
+
+    private void CommsToAllButSender(int index, string message)
+    {
+        for (int i = 0; i < sockets.Length; i++)
+        {
+            if (sockets[i] != null && i != index)
+            {
+               SendMessage(index, message);
+            }
+
         }
     }
 
@@ -115,30 +120,47 @@ public class WebSocketHandler
 
     private void ProcessMessage(int index, string message)
     {
-        if (message.StartsWith("AUTHENTICATE"))
-        {
-            User? tmpUser = ValidateUser(message);
-            if (tmpUser != null)
-            {
-                tmpUser.WebSocketID = index;
-                WebSocketServer.Instance.ConnectedClients.Add(tmpUser);
-                Console.WriteLine("Added User to Client list:" + tmpUser.WebSocketID +"User:" + tmpUser.GetUserName());
-                SendMessage(index, "AUTH:OK");
-            }
-            else // not authenticated
-            {
-                SendMessage(index, "AUTH:FAILED");   
-                
-            }
-        }
+        string[] messageChunks = message.Split(':');
 
-        if (message.StartsWith("GETMYID"))
+        switch (messageChunks[0])
         {
-            SendMessage(index, "IDIS:" + index);
-        }
-        if (message.StartsWith("GETUSERLIST"))
-        {
-            GetUserList(index);
+            case "AUTHENTICATE":
+                    User? tmpUser = ValidateUser(message);
+                    if (tmpUser != null)
+                    {
+                        tmpUser.WebSocketID = index;
+                        WebSocketServer.Instance.ConnectedClients.Add(tmpUser);
+                        Console.WriteLine("Added User to Client list:" + tmpUser.WebSocketID +"User:" + tmpUser.GetUserName());
+                        SendMessage(index, "AUTH:OK");
+                    }
+                    else // not authenticated
+                    {
+                        SendMessage(index, "AUTH:FAILED");   
+                    
+                    }
+                    break;
+            
+            case "GETMYID":
+                SendMessage(index, "IDIS:" + index);
+                break;
+            
+            case "GETUSERLIST":
+                GetUserList(index);
+                break;
+            
+            case "SENDMESGTOUSER":
+                CommsToUser(messageChunks[1], messageChunks[2]);
+                break;
+            
+            case "SENDMESGTOALL":
+                CommsToAllButSender(index, messageChunks[1]);
+                break;
+            
+            case "CREATEPRIVATEROOM":
+                CommsToAllButSender(index, messageChunks[1]);
+                break; 
+            default:
+                break;
         }
     }
 

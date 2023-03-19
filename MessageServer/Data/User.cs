@@ -4,8 +4,8 @@ namespace MessageServer;
 
 public class User
 {
-    private String _userName;
-    private String _passWord;
+    private string _userName;
+    private string _passWord;
     private bool _isValidated;
     public int WebSocketID;
     
