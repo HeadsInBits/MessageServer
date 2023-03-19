@@ -13,18 +13,22 @@ public class Room
     private Guid RoomID = Guid.NewGuid();
     private List<User> usersInRoom;
     private List<User> bannedList;
+    private String RoomName; 
     private bool isRoomLocked { get { return isRoomLocked; } }
     private String roomKey = String.Empty;
     private DateTime roomCreation = DateTime.Now;
     private User creator;
 
     public Room(User creator)
-    { this.creator = creator;
+    { 
+        this.creator = creator;
+
     }
 
     public List<User> GetUsersInRoom()
     {
         return usersInRoom;
+        
     }
 
     public RoomStatusCodes AddUserToRoom(User usrToAdd)

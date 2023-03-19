@@ -15,8 +15,15 @@ public class DBManager
         connectionString = $"Server={server};Database={database};User Id={username};Password={password};";
 
         // Create a new SqlConnection object
-        connection = new MySqlConnection(connectionString);
-        connection.Open();
+        try
+        {
+            connection = new MySqlConnection(connectionString);
+            connection.Open();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Server Execption!!::" + e.Message);
+        }
     }
 
     public bool ValidateAccount(String userName, String passWord)
@@ -48,6 +55,11 @@ public class DBManager
        if(logging) 
            Console.WriteLine("Validate Account Found "+ numberOfResults + " Accounts");
        return numberOfResults > 0;
+    }
+
+    public void PersistMessageToUser(User usr, string message)
+    {
+        throw new NotImplementedException();
     }
     
     public void CloseConnection() {

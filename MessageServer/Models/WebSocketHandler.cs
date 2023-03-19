@@ -50,10 +50,20 @@ public class WebSocketHandler
             var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             if (result.MessageType == WebSocketMessageType.Close)
             {
-                // Close the socket
-                sockets[index] = null;
-                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
-                    CancellationToken.None);
+                try
+                {
+                    // Close the socket
+                    sockets[index] = null;
+                    _userController.connectedClients.Remove(_userController.GetUserProfileFromSocketId(index));
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
+                        CancellationToken.None);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("SERVER EXCEPTION!!!: "+ ex.Message);
+                }
+
                 break;
             }
             else if (result.MessageType == WebSocketMessageType.Binary ||
