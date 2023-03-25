@@ -100,6 +100,16 @@ public class Client
                     }
                     
                     break;
+                case "ROOMJOINED":
+                    
+                    Console.WriteLine($"joined room {MessageChunks[1]}");
+                    break;
+                case "ROOMCREATED":
+                    Console.WriteLine($"room {MessageChunks[1]} has been created");
+                    break;
+                case "USERJOINED":
+                    Console.WriteLine($"{MessageChunks[1]} joined room");
+                    break;
                 
                   default:
                       throw new NotSupportedException();
@@ -117,7 +127,7 @@ public class Client
         public async Task CreateRoom(string userName)
         {
             var msg = new StringBuilder();
-            msg.Append("CREATEPRIVATEROOM");
+            msg.Append("CREATEROOM:2:PRIVATE");
             await SendMessage(msg.ToString());
         }
 

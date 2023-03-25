@@ -4,9 +4,9 @@ public class RoomController
 {
     private List<Room> privateRooms = new List<Room>();
 
-    public int CreateNewRoom(User roomCreator)
+    public int CreateNewRoom(User roomCreator, string[] messageChunks)
     {
-        Room tmpRoom = new Room(roomCreator);
+        Room tmpRoom = new Room(roomCreator, Int32.Parse(messageChunks[1]), messageChunks[2].ToUpper()=="PUBLIC");
         privateRooms.Add(tmpRoom);
         return privateRooms.IndexOf(tmpRoom);
     }

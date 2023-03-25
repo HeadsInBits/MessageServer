@@ -89,6 +89,7 @@ public class WebSocketHandler
         }
     }
 
+    //TODO:validate message is not a server command / send with message i.e. "COMMSTOALLUSERS:USER:MESSAGE"
     private void CommsToAllButSender(int index, string message)
     {
         for (int i = 0; i < sockets.Length; i++)
@@ -213,21 +214,27 @@ public class WebSocketHandler
                 GetUserList(index);
                 break;
             
+            //todo:sender should be sent with message for validation here or CommsToUser, also should have a return format i.e "SENDMESGTOUSER:USER:01:MESSAGE:Hello"
             case "SENDMESGTOUSER":
                 Console.WriteLine("Sending a Direct Message to:" +  messageChunks[1]);
                 CommsToUser(messageChunks[1], messageChunks[2]);
                 break;
             
+            //TODO:sender should be sent with message for validation here or CommsToAllButSender, also should have a return format i.e "SENDMESGTOALL:USER:01:MESSAGE:Hello"
             case "SENDMESGTOALL":
                 CommsToAllButSender(index, messageChunks[1]);
                 break;
             
-            case "CREATEPRIVATEROOM":
-                int roomNumber =  _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index));
+            case "CREATEROOM":
+                int roomNumber =  _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index), messageChunks);
+                SendMessage(index, $"ROOMCREATED:{roomNumber}");
                 break; 
                 
             case "ADDUSERTOROOM":
-                    _roomController.AddUserToRoom(_userController.GetUserProfileFromUserName(messageChunks[1]), Int32.Parse(messageChunks[2]));
+                var userProfile = _userController.GetUserProfileFromUserName(messageChunks[1]);
+                _roomController.AddUserToRoom(userProfile, Int32.Parse(messageChunks[2]));
+                    SendMessage(index, "USERJOINED:" + messageChunks[1]);
+                    SendMessage(userProfile.WebSocketID, "ROOMJOINED:" + messageChunks[2]);
                     break;
             
             case "LISTUSERSINROOM":

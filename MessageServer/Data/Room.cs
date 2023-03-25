@@ -18,10 +18,14 @@ public class Room
     private String roomKey = String.Empty;
     private DateTime roomCreation = DateTime.Now;
     private User creator;
+    private int _roomLimit;
+    private bool _isPublic;
 
-    public Room(User creator)
+    public Room(User creator, int roomLimit, bool isPublic)
     { 
         this.creator = creator;
+        _roomLimit = roomLimit;
+        _isPublic = isPublic;
 
     }
 
@@ -43,7 +47,7 @@ public class Room
 
     public RoomStatusCodes AddUserToRoom(User usrToAdd)
     {
-        if (isRoomLocked)
+        if (isRoomLocked || _roomLimit <= usersInRoom.Count)
             return RoomStatusCodes.ROOMLOCKED;
         
         if (!bannedList.Contains(usrToAdd))
