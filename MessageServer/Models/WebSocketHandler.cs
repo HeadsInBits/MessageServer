@@ -46,8 +46,12 @@ public class WebSocketHandler
     {
         // Handle WebSocket messages in a separate thread
         var buffer = new byte[1024];
-        while (!cancellation.IsCancellationRequested)
+        while (!cancellation.IsCancellationRequested )
         {
+            if(socket == null) {
+                return;
+            }
+
             var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
             if (result.MessageType == WebSocketMessageType.Close)
             {
@@ -135,7 +139,7 @@ public class WebSocketHandler
 
     }
     
-    private void GetUserList(int myIndex)
+    private async void GetUserList(int myIndex)
     {
         var returnMessage = new StringBuilder();
 
@@ -150,24 +154,26 @@ public class WebSocketHandler
         }
 
         Console.WriteLine("SENDING USER LIST@@ " + returnMessage.ToString());
-        SendMessage(myIndex, returnMessage.ToString());
-    }
-    
-    private void SendMessage(int index, string  message)
-    {
-      // sockets[index].SendAsync();
-    if(sockets[index] == null)
-        return;
-    
-      
-      byte[] buffer = Encoding.UTF8.GetBytes(message);
-      // Create a WebSocket message from the buffer
-      var webSocketMessage = new ArraySegment<byte>(buffer);
-      
-      sockets[index].SendAsync(webSocketMessage, WebSocketMessageType.Text, true, CancellationToken.None);
+		_ = Task.Run(() => SendMessage(myIndex, returnMessage.ToString()));
+        
     }
 
-    private void ProcessMessage(int index, string message)
+	private bool SendMessage(int index, string message)
+	{
+		// sockets[index].SendAsync();
+		if (sockets [index] == null)
+			return false;
+
+
+		byte [] buffer = Encoding.UTF8.GetBytes(message);
+		// Create a WebSocket message from the buffer
+		var webSocketMessage = new ArraySegment<byte>(buffer);
+
+		sockets [index].SendAsync(webSocketMessage, WebSocketMessageType.Text, true, CancellationToken.None);
+		return true;
+	}
+
+	private void ProcessMessage(int index, string message)
     {
         string[] messageChunks = message.Split(':');
 
