@@ -1,8 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageServer", "MessageServer\MessageServer.csproj", "{CD4BDC91-7C5B-44D3-907F-389AD67E7C06}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33502.453
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessageServer", "MessageServer\MessageServer.csproj", "{CD4BDC91-7C5B-44D3-907F-389AD67E7C06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetClient", "NetClient\NetClient.csproj", "{F8446FC6-8E03-4D47-BEE2-8C4BDD7862C9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetClient", "NetClient\NetClient.csproj", "{F8446FC6-8E03-4D47-BEE2-8C4BDD7862C9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetworkManager", "NetworkManager\NetworkManager.csproj", "{26F200C2-28F6-4455-A338-6995AC0EDD44}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +23,12 @@ Global
 		{F8446FC6-8E03-4D47-BEE2-8C4BDD7862C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8446FC6-8E03-4D47-BEE2-8C4BDD7862C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8446FC6-8E03-4D47-BEE2-8C4BDD7862C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26F200C2-28F6-4455-A338-6995AC0EDD44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26F200C2-28F6-4455-A338-6995AC0EDD44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26F200C2-28F6-4455-A338-6995AC0EDD44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26F200C2-28F6-4455-A338-6995AC0EDD44}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

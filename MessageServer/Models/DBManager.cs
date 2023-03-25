@@ -40,7 +40,7 @@ public class DBManager
 
        int numberOfResults;
        
-       using (MySqlCommand cmd = new MySqlCommand($"Select * From Users WHERE UserName like '{userName}' and Password like '{passWord}'", connection))
+       using (MySqlCommand cmd = new MySqlCommand($"Select * From Users WHERE UserName = BINARY '{userName}' and Password = BINARY '{passWord}' COLLATE utf8mb4_general_ci", connection))
        {
            cmd.CommandType = CommandType.Text;
            using (MySqlDataAdapter sda = new MySqlDataAdapter(cmd))

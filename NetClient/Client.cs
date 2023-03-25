@@ -4,6 +4,7 @@ using System.Security.Authentication;
 using System.Text;
 
 namespace NetClient;
+public delegate void MessageEvent();
 
 public class Client
 {
@@ -16,9 +17,11 @@ public class Client
         public ObservableCollection<string> networkUsers = new ObservableCollection<string>();
         public List<Guid> roomList = new List<Guid>();
         public List<Guid> subscribedRooms = new List<Guid>();
+        public event MessageEvent MessageRecieved;
+        
 
         ~Client(){
-            this.Disconnect();
+           // this.Disconnect();
         }
         
         public async Task Connect()
@@ -86,8 +89,7 @@ public class Client
                     }
                     break;
                 case "RECIEVEMESSAGE":
-                  // MessageBox.Show("Message Recieved!" + MessageChunks[1]);
-                    
+                        RecieveMessage(MessageChunks [1], MessageChunks [2]);
                     break;
                 
                 case "ROOMLIST":
@@ -106,8 +108,13 @@ public class Client
             }
             
         }
-        
-        private async Task SendMessage(string message)
+
+	private void RecieveMessage(string userName, string Message)
+	{
+        MessageRecieved?.Invoke();
+	}
+
+	private async Task SendMessage(string message)
         {
             ArraySegment<byte> buffer = new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(message));
             await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
