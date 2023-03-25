@@ -4,7 +4,6 @@ using System.Security.Authentication;
 using System.Text;
 
 namespace NetClient;
-public delegate void MessageEvent();
 
 public class Client
 {
@@ -17,11 +16,19 @@ public class Client
         public ObservableCollection<string> networkUsers = new ObservableCollection<string>();
         public List<Guid> roomList = new List<Guid>();
         public List<Guid> subscribedRooms = new List<Guid>();
-        public event MessageEvent MessageRecieved;
+        public static event Action<string> onMessageRecievedEvent;
+        public static event Action<bool> onAuthenticateEvent;
+        public static event Action<bool> onRoomCreatedEvent;
+        public static event Action<bool> onRoomJoinedEvent;
+        public static event Action<bool> onUserJoinedEvent;
+        public static event Action<bool> onUserLeftEvent;
+        public static event Action<string> onRoomListRecievedEvent;
+        public static event Action<string> onUserListRecievedEvent;
+        public static event Action<int> onIDRecievedEvent;
         
 
         ~Client(){
-           // this.Disconnect();
+           this.Disconnect();
         }
         
         public async Task Connect()
@@ -71,13 +78,19 @@ public class Client
             {
                 case "AUTH": // authorisation accepted by the server.
                     if (MessageChunks[1] == "OK")
+                    {
                         isClientValidated = true;
+                        onAuthenticateEvent?.Invoke(true);
+                    }
                     else
+                        onAuthenticateEvent?.Invoke(false);
                         throw new AuthenticationException("User is not Validated");
+                        
                     break;
                 
                 case "IDIS":
                     ClientID = System.Int32.Parse(MessageChunks[1]);
+                    onIDRecievedEvent?.Invoke(ClientID);
                     break;
                 
                 case "USERLIST":
@@ -89,7 +102,7 @@ public class Client
                     }
                     break;
                 case "RECIEVEMESSAGE":
-                        RecieveMessage(MessageChunks [1], MessageChunks [2]);
+                        ReceiveMessage(MessageChunks [1], MessageChunks [2]);
                     break;
                 
                 case "ROOMLIST":
@@ -100,7 +113,7 @@ public class Client
                     {
                         roomList.Add(Guid.Parse( MessageChunks[2+counter]));
                     }
-                    
+                   // onRoomListRecievedEvent?.Invoke();
                     break;
                 case "ROOMJOINED":
                     
@@ -119,9 +132,9 @@ public class Client
             
         }
 
-	private void RecieveMessage(string userName, string Message)
+	private void ReceiveMessage(string userName, string Message)
 	{
-        MessageRecieved?.Invoke();
+        onMessageRecievedEvent?.Invoke(Message);
 	}
 
 	private async Task SendMessage(string message)
