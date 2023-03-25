@@ -1,23 +1,22 @@
+using Microsoft.VisualBasic;
+using System.Collections.ObjectModel;
+
 namespace NetworkManager;
 
 public partial class Form1 : Form
 {
 	NetClient.Client netClient = new NetClient.Client();
 
+
 	public Form1()
 	{
 		InitializeComponent();
+
 	}
 
 	private void RefreshUsersButton_Click(object sender, EventArgs e)
 	{
 		Task.FromResult(netClient.UpdateUserList());
-		UserList.Items.Clear();
-
-		foreach (var client in netClient.networkUsers) {
-			UserList.Items.Add(client);
-		}
-
 	}
 
 	private void LoginButton_Click(object sender, EventArgs e)
@@ -59,10 +58,61 @@ public partial class Form1 : Form
 	private void CreateRoomButton_Click(object sender, EventArgs e)
 	{
 		netClient.CreateRoom("Manic");
+
 	}
 
-	private void LoginButton_Click_1(object sender, EventArgs e)
+	private void Form1_Load(object sender, EventArgs e)
 	{
+		netClient.onAuthenticateEvent += NetClient_onAuthenticateEvent;
+		netClient.onMessageRecievedEvent += NetClient_onMessageRecievedEvent;
+		netClient.onRoomCreatedEvent += NetClient_onRoomCreatedEvent;
+		netClient.onRoomJoinedEvent += NetClient_onRoomJoinedEvent;
+		netClient.onRoomListRecievedEvent += NetClient_onRoomListRecievedEvent;
+		netClient.onUserListRecievedEvent += NetClient_onUserListRecievedEvent;
+	}
+
+	private void NetClient_onUserListRecievedEvent(ObservableCollection<string> obj)
+	{
+		UserList.Items.Clear();
+
+		foreach (var client in netClient.networkUsers) {
+			UserList.Items.Add(client);
+		}
+	}
+
+	private void NetClient_onRoomListRecievedEvent(List<Guid> obj)
+	{
+		foreach (var roomId in obj) {
+			RoomList.Items.Add(roomId.ToString());
+		}
+	}
+
+	private void NetClient_onRoomJoinedEvent(bool obj)
+	{
+		throw new NotImplementedException();
+	}
+
+	private void NetClient_onRoomCreatedEvent(bool obj)
+	{
+		throw new NotImplementedException();
+	}
+
+	private void NetClient_onMessageRecievedEvent(string obj)
+	{
+		MessageBox.Show("Message Recieved: ", obj);
+	}
+
+	private void NetClient_onAuthenticateEvent(bool obj)
+	{
+
+		if (obj) {
+			LoginButton.BackColor= Color.Green;	
+			LoginStatusStrip.Text = "Login OK + Authenticated as " + netClient.GetClientName();
+
+		} else { 
+			LoginButton.BackColor= Color.Red;
+			LoginStatusStrip.Text="Login Failed!";
+		}
 
 	}
 }

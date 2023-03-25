@@ -151,7 +151,7 @@ partial class Form1
 		LoginButton.TabIndex = 0;
 		LoginButton.Text = "Login";
 		LoginButton.UseVisualStyleBackColor = true;
-		LoginButton.Click += LoginButton_Click_1;
+		LoginButton.Click += LoginButton_Click;
 		// 
 		// UsersTab
 		// 
@@ -183,6 +183,7 @@ partial class Form1
 		RefreshUsersButton.TabIndex = 2;
 		RefreshUsersButton.Text = "Refresh Users";
 		RefreshUsersButton.UseVisualStyleBackColor = true;
+		RefreshUsersButton.Click += RefreshUsersButton_Click;
 		// 
 		// UserList
 		// 
@@ -223,6 +224,7 @@ partial class Form1
 		CreateRoomButton.TabIndex = 2;
 		CreateRoomButton.Text = "Create Room";
 		CreateRoomButton.UseVisualStyleBackColor = true;
+		CreateRoomButton.Click += CreateRoomButton_Click;
 		// 
 		// RefreshRoomsButton
 		// 
@@ -232,6 +234,7 @@ partial class Form1
 		RefreshRoomsButton.TabIndex = 1;
 		RefreshRoomsButton.Text = "Refresh Rooms";
 		RefreshRoomsButton.UseVisualStyleBackColor = true;
+		RefreshRoomsButton.Click += RefreshRoomsButton_Click;
 		// 
 		// RoomList
 		// 
@@ -250,6 +253,7 @@ partial class Form1
 		Controls.Add(tabControl1);
 		Name = "Form1";
 		Text = "Network Manager";
+		Load += Form1_Load;
 		tabControl1.ResumeLayout(false);
 		NetworkTab.ResumeLayout(false);
 		groupBox1.ResumeLayout(false);

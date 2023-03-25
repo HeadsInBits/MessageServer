@@ -48,38 +48,41 @@ public class WebSocketHandler
         var buffer = new byte[1024];
         while (!cancellation.IsCancellationRequested )
         {
-            if(socket == null) {
-                return;
-            }
 
-            var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-            if (result.MessageType == WebSocketMessageType.Close)
-            {
-                try
-                {
-                    // Close the socket
-                    sockets[index] = null;
-                    _userController.connectedClients.Remove(_userController.GetUserProfileFromSocketId(index));
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
-                        CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("SERVER EXCEPTION!!!: "+ ex.Message);
-                }
-                break;
-            }
-            else if (result.MessageType == WebSocketMessageType.Binary ||
-                     result.MessageType == WebSocketMessageType.Text)
-            {
-                // Handle the message
-                var message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
-                Console.WriteLine($"Received message from client {index}: {message}");
+            try {
 
-                ProcessMessage(index, message);
-            }
+				var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
-        }
+				if (result.MessageType == WebSocketMessageType.Close) {
+					// Close the socket
+					sockets [index] = null;
+					_userController.connectedClients.Remove(_userController.GetUserProfileFromSocketId(index));
+					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
+						CancellationToken.None);
+
+				}
+				else if (result.MessageType == WebSocketMessageType.Binary ||
+						 result.MessageType == WebSocketMessageType.Text) {
+					// Handle the message
+					var message = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
+					Console.WriteLine($"Received message from client {index}: {message}");
+
+					ProcessMessage(index, message);
+				}
+
+
+			} catch (WebSocketException ex) {
+				if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived) {
+					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected", CancellationToken.None);
+				}
+				// Handle the client disconnection here
+			} catch (Exception ex) {
+				Console.WriteLine($"Error receiving message: {ex.Message}");
+				// Handle the error here
+			}
+
+
+		}
     }
 
     private void CommsToUser(string username, string message)
@@ -118,6 +121,11 @@ public class WebSocketHandler
                 msg.Append(":" + Usr.GetUserName());
             }
         }
+
+        if (logginEnabled) {
+            Console.WriteLine("Sending Room Users:" + msg.ToString());
+        }
+
         SendMessage(index, msg.ToString());
     }
 
@@ -134,7 +142,10 @@ public class WebSocketHandler
             }
         }
 
-        SendMessage(index,msg.ToString());
+		if (logginEnabled) {
+			Console.WriteLine("Sending Room List:" + msg.ToString());
+		}
+		SendMessage(index,msg.ToString());
 
 
     }

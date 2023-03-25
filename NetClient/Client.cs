@@ -16,15 +16,15 @@ public class Client
         public ObservableCollection<string> networkUsers = new ObservableCollection<string>();
         public List<Guid> roomList = new List<Guid>();
         public List<Guid> subscribedRooms = new List<Guid>();
-        public static event Action<string> onMessageRecievedEvent;
-        public static event Action<bool> onAuthenticateEvent;
-        public static event Action<bool> onRoomCreatedEvent;
-        public static event Action<bool> onRoomJoinedEvent;
-        public static event Action<bool> onUserJoinedEvent;
-        public static event Action<bool> onUserLeftEvent;
-        public static event Action<string> onRoomListRecievedEvent;
-        public static event Action<string> onUserListRecievedEvent;
-        public static event Action<int> onIDRecievedEvent;
+        public event Action<string> onMessageRecievedEvent;
+        public event Action<bool> onAuthenticateEvent;
+        public event Action<bool> onRoomCreatedEvent;
+        public event Action<bool> onRoomJoinedEvent;
+        public event Action<bool> onUserJoinedEvent;
+        public event Action<bool> onUserLeftEvent;
+	    public event Action<List<Guid>> onRoomListRecievedEvent;
+        public event Action<ObservableCollection<string>> onUserListRecievedEvent;
+        public event Action<int> onIDRecievedEvent;
         
 
         ~Client(){
@@ -100,9 +100,12 @@ public class Client
                     {
                         networkUsers.Add(MessageChunks[3 + counter]);
                     }
+                    onUserListRecievedEvent?.Invoke(networkUsers);
                     break;
+
                 case "RECIEVEMESSAGE":
-                        ReceiveMessage(MessageChunks [1], MessageChunks [2]);
+                    ReceiveMessage(MessageChunks [1], MessageChunks [2]);
+                    onMessageRecievedEvent?.Invoke(MessageChunks [2]);
                     break;
                 
                 case "ROOMLIST":
@@ -113,21 +116,26 @@ public class Client
                     {
                         roomList.Add(Guid.Parse( MessageChunks[2+counter]));
                     }
-                   // onRoomListRecievedEvent?.Invoke();
+                    onRoomListRecievedEvent?.Invoke(roomList);
                     break;
+
                 case "ROOMJOINED":
-                    
+                    onRoomJoinedEvent?.Invoke(true);
                     Console.WriteLine($"joined room {MessageChunks[1]}");
                     break;
                 case "ROOMCREATED":
-                    Console.WriteLine($"room {MessageChunks[1]} has been created");
+                    onRoomCreatedEvent?.Invoke(true);
+                            Console.WriteLine($"room {MessageChunks[1]} has been created");
                     break;
                 case "USERJOINED":
+                    onUserJoinedEvent?.Invoke(true);
                     Console.WriteLine($"{MessageChunks[1]} joined room");
                     break;
                 
                   default:
                       throw new NotSupportedException();
+       
+            
             }
             
         }
