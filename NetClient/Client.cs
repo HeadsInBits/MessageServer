@@ -25,14 +25,16 @@ namespace NetClient
 		//Events
 		public event Action<string> onMessageRecievedEvent;
 		public event Action<bool> onAuthenticateEvent;
-		public event Action<int> onRoomCreatedEvent;
-		public event Action<bool> onRoomJoinedEvent;
-		public event Action<(int RoomID, string Message)>  onRoomMessageRecievedEvent;
-
+						
+		public event Action<List<User>> onUserListRecievedEvent;
 		public event Action<bool> onUserJoinedEvent;
 		public event Action<bool> onUserLeftEvent;
+
 		public event Action<List<Room>> onRoomListRecievedEvent;
-		public event Action<List<User>> onUserListRecievedEvent;
+		public event Action<int> onRoomCreatedEvent;
+		public event Action<bool> onRoomJoinedEvent;
+		public event Action<(int RoomID, string Message)> onRoomMessageRecievedEvent;
+
 		public event Action<int> onIDRecievedEvent;
 
 
