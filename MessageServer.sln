@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetClient", "NetClient\NetC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetworkManager", "NetworkManager\NetworkManager.csproj", "{26F200C2-28F6-4455-A338-6995AC0EDD44}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibObjects", "LibObjects\LibObjects.csproj", "{E3775F7A-13B0-4955-99B5-DC15CA2E476B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,8 +29,15 @@ Global
 		{26F200C2-28F6-4455-A338-6995AC0EDD44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26F200C2-28F6-4455-A338-6995AC0EDD44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26F200C2-28F6-4455-A338-6995AC0EDD44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3775F7A-13B0-4955-99B5-DC15CA2E476B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3775F7A-13B0-4955-99B5-DC15CA2E476B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3775F7A-13B0-4955-99B5-DC15CA2E476B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3775F7A-13B0-4955-99B5-DC15CA2E476B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BB1CDE6E-1395-4D1A-89FE-C33B16A3E3E1}
 	EndGlobalSection
 EndGlobal

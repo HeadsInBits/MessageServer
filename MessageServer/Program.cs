@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using MessageServer;
+using MessageServer.Models;
 
 var server = WebSocketServer.Instance;
 await server.Start();

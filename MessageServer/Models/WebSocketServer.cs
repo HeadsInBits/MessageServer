@@ -2,66 +2,60 @@
 using System.Net.WebSockets;
 using Org.BouncyCastle.Security;
 
-namespace MessageServer;
+namespace MessageServer.Models;
 
 public class WebSocketServer
 {
-    private static readonly WebSocketServer instance = new WebSocketServer();
-    private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
-    private readonly HttpListener listener = new HttpListener();
-    private readonly WebSocketHandler handler = new WebSocketHandler();
+	private static readonly WebSocketServer instance = new WebSocketServer();
+	private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
+	private readonly HttpListener listener = new HttpListener();
+	private readonly WebSocketHandler handler = new WebSocketHandler();
 
-   
-    private DBManager _dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
-    
-    private WebSocketServer()
-    {
-        // Set up HttpListener
-        listener.Prefixes.Add("http://localhost:8080/");
 
-    }
+	private DBManager _dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
 
-    public static WebSocketServer Instance { get { return instance; } }
+	private WebSocketServer()
+	{
+		// Set up HttpListener
+		listener.Prefixes.Add("http://localhost:8080/");
 
-    public async Task Start()
-    {
-        // Start HttpListener
-        listener.Start();
+	}
 
-        Console.WriteLine("WebSocket server started.");
+	public static WebSocketServer Instance { get { return instance; } }
 
-        // Wait for incoming connections
-        while (!cancellation.IsCancellationRequested)
-        {
-            var context = await listener.GetContextAsync();
-            if (context.Request.IsWebSocketRequest)
-            {
-                try
-                {
-                    // Accept WebSocket connection
-                    var socketContext = await context.AcceptWebSocketAsync(subProtocol: null);
-                    handler.AddSocket(socketContext.WebSocket);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"WebSocket connection error: {ex.Message}");
-                }
-            }
-            else
-            {
-                // Handle non-WebSocket requests
-                context.Response.StatusCode = 400;
-                context.Response.Close();
-            }
-        }
-    }
+	public async Task Start()
+	{
+		// Start HttpListener
+		listener.Start();
 
-    public async Task Stop()
-    {
-        // Stop HttpListener and WebSocketHandler
-        cancellation.Cancel();
-        listener.Stop();
-        await handler.Stop();
-    }
+		Console.WriteLine("WebSocket server started.");
+
+		// Wait for incoming connections
+		while (!cancellation.IsCancellationRequested) {
+			var context = await listener.GetContextAsync();
+			if (context.Request.IsWebSocketRequest) {
+				try {
+					// Accept WebSocket connection
+					var socketContext = await context.AcceptWebSocketAsync(subProtocol: null);
+					handler.AddSocket(socketContext.WebSocket);
+				} catch (Exception ex) {
+					Console.WriteLine($"WebSocket connection error: {ex.Message}");
+				}
+			}
+			else {
+				// Handle non-WebSocket requests
+				context.Response.StatusCode = 400;
+				context.Response.Close();
+			}
+		}
+	}
+
+	public async Task Stop()
+	{
+		// Stop HttpListener and WebSocketHandler
+		cancellation.Cancel();
+		listener.Stop();
+		await handler.Stop();
+	}
 }
 
