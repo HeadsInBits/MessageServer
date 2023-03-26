@@ -189,7 +189,7 @@ namespace NetClient
 		public async Task SendMessageToRoomAsync(int RoomID, String Message)
 		{
 			var msg = new StringBuilder();
-			msg.Append($"SENDMSGTOROOM:{RoomID}:{Message}");
+			msg.Append($"SENDMSGTOROOM:{RoomID}:{ClientID}:{Message}");
 			await SendMessage(msg.ToString());
 		}
 

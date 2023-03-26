@@ -257,12 +257,12 @@ public class WebSocketHandler
 			SendMessage(userProfile.WebSocketID, "ROOMJOINED:" + messageChunks [2]);
 			break;
 			
-			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[MESSAGE]"
+			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[UserID]:[MESSAGE]"
 				 
 				foreach (var usr in _roomController.GetUsersInRoom(Int32.Parse(messageChunks[1])))
 				{
 					
-						SendMessage(usr.WebSocketID, "ROOMMSG:" + messageChunks[1] +":"+ messageChunks[2]);
+						SendMessage(usr.WebSocketID, "ROOMMSG:" + messageChunks [1] + ":"+ messageChunks [2] +":"+ messageChunks[3]);
 				}
 				
 				break;
