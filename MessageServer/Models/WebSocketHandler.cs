@@ -9,8 +9,10 @@ public class WebSocketHandler
 {
 	private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
 	private readonly WebSocket [] sockets = new WebSocket [10];
+
 	private RoomController _roomController = new RoomController();
 	private UserController _userController = new UserController();
+
 	private bool logginEnabled = true;
 
 	public void AddSocket(WebSocket socket)
@@ -42,7 +44,7 @@ public class WebSocketHandler
 	private async void StartHandling(WebSocket socket, int index)
 	{
 		// Handle WebSocket messages in a separate thread
-		var buffer = new byte [1024];
+		var buffer = new byte [16384];
 		while (!cancellation.IsCancellationRequested) {
 
 			try {
@@ -52,6 +54,8 @@ public class WebSocketHandler
 				if (result.MessageType == WebSocketMessageType.Close) {
 					// Close the socket
 					sockets [index] = null;
+					
+					Console.WriteLine("Client Disconnected:" + index);
 					_userController.connectedClients.Remove(_userController.GetUserProfileFromSocketId(index));
 					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
 						CancellationToken.None);
@@ -72,7 +76,7 @@ public class WebSocketHandler
 					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected", CancellationToken.None);
 				}
 				// Handle the client disconnection here
-				sockets [index] = null;
+			//	sockets [index] = null;
 			} catch (Exception ex) {
 				Console.WriteLine($"Error receiving message: {ex.Message}");
 				// Handle the error here
@@ -141,6 +145,11 @@ public class WebSocketHandler
 
 	}
 
+	private void SendRoomListJSON(int index)
+	{
+		SendMessage(index, "ROOMLIST*JSON:"+_roomController.JSONGetRoomList());
+	}
+
 	private async void GetUserList(int myIndex)
 	{
 		var returnMessage = new StringBuilder();
@@ -160,6 +169,7 @@ public class WebSocketHandler
 
 	private bool SendMessage(int index, string message)
 	{
+		Console.WriteLine("Index:" + index +  "Socket State: " + sockets[index].State);
 		// sockets[index].SendAsync();
 		if (sockets [index] == null)
 			return false;
@@ -204,6 +214,10 @@ public class WebSocketHandler
 				}
 
 				SendMessage(index, "AUTH:OK");
+				SendMessage(index, "AUTH:OK");
+				
+		
+				
 			}
 			else // not authenticated
 			{
@@ -242,6 +256,16 @@ public class WebSocketHandler
 			SendMessage(index, "USERJOINED:" + messageChunks [1]);
 			SendMessage(userProfile.WebSocketID, "ROOMJOINED:" + messageChunks [2]);
 			break;
+			
+			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[MESSAGE]"
+				 
+				foreach (var usr in _roomController.GetUsersInRoom(Int32.Parse(messageChunks[1])))
+				{
+					
+						SendMessage(usr.WebSocketID, "ROOMMSG:" + messageChunks[1] +":"+ messageChunks[2]);
+				}
+				
+				break;
 
 			case "LISTUSERSINROOM":
 			SendUsersOfRoom(index, int.Parse(messageChunks [1]));
@@ -249,6 +273,10 @@ public class WebSocketHandler
 
 			case "GETROOMLIST":
 			SendRoomList(index);
+			break;
+
+			case "GETROOMLIST*JSON":
+			SendRoomListJSON(index);	
 			break;
 
 			default:

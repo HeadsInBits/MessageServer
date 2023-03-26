@@ -1,4 +1,6 @@
 ﻿using MessageServer.Data;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text;
@@ -15,29 +17,35 @@ namespace NetClient
 		private int ClientID;
 		private String ClientName;
 		public List<User> networkUsers = new List<User>();
-		public List<Guid> roomList = new List<Guid>();
+		public List<Room> roomList = new List<Room>();
 		public List<Room> subscribedRooms = new List<Room>();
+
+		public bool refreshing = false;
+
+		//Events
 		public event Action<string> onMessageRecievedEvent;
 		public event Action<bool> onAuthenticateEvent;
-		public event Action<bool> onRoomCreatedEvent;
+		public event Action<int> onRoomCreatedEvent;
 		public event Action<bool> onRoomJoinedEvent;
+		public event Action<(int RoomID, string Message)>  onRoomMessageRecievedEvent;
+
 		public event Action<bool> onUserJoinedEvent;
 		public event Action<bool> onUserLeftEvent;
-		public event Action<List<Guid>> onRoomListRecievedEvent;
+		public event Action<List<Room>> onRoomListRecievedEvent;
 		public event Action<List<User>> onUserListRecievedEvent;
 		public event Action<int> onIDRecievedEvent;
 
 
 		~Client()
 		{
-			// this.Disconnect();
+			 this.Disconnect();
 		}
 
 		public async Task Connect()
 		{
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
 
-			byte [] receiveBuffer = new byte [1024];
+			byte [] receiveBuffer = new byte [16384];
 			ArraySegment<byte> receiveSegment = new ArraySegment<byte>(receiveBuffer);
 			while (webSocket.State == WebSocketState.Open) {
 				WebSocketReceiveResult result = await webSocket.ReceiveAsync(receiveSegment, CancellationToken.None);
@@ -49,7 +57,7 @@ namespace NetClient
 			}
 		}
 
-		public List<Guid> GetRoomList()
+		public List<Room> GetRoomList()
 		{
 			return roomList;
 		}
@@ -85,8 +93,9 @@ namespace NetClient
 				else {
 					onAuthenticateEvent?.Invoke(false);
 					throw new AuthenticationException("User is not Validated");
+					break;
 				}
-
+				break;
 
 				case "IDIS":
 				ClientID = System.Int32.Parse(MessageChunks [1]);
@@ -107,14 +116,26 @@ namespace NetClient
 				onMessageRecievedEvent?.Invoke(MessageChunks [2]);
 				break;
 
-				case "ROOMLIST":
-				roomList.Clear();
-				int numberOfRooms = Int32.Parse(MessageChunks [1]);
+				//case "ROOMLIST":
+				//roomList.Clear();
+				//int numberOfRooms = Int32.Parse(MessageChunks [1]);
 
-				for (int counter = 0; counter < numberOfRooms; counter++) {
-					roomList.Add(Guid.Parse(MessageChunks [2 + counter]));
-				}
-				onRoomListRecievedEvent?.Invoke(roomList);
+				//for (int counter = 0; counter < numberOfRooms; counter++) {
+				//	roomList.Add(Guid.Parse(MessageChunks [2 + counter]));
+				//}
+				//onRoomListRecievedEvent?.Invoke(roomList);
+				//break;
+
+				case "ROOMLIST*JSON":
+
+				string jsonData = receivedMessage.Substring(MessageChunks [0].Length + 1);
+
+				
+				roomList.Clear();
+				List<Room> JsonDe = JsonConvert.DeserializeObject<List<Room>>(jsonData);
+				roomList = JsonDe;
+				refreshing = false;
+				onRoomListRecievedEvent?.Invoke(JsonDe);
 				break;
 
 				case "ROOMJOINED":
@@ -123,8 +144,12 @@ namespace NetClient
 				break;
 
 				case "ROOMCREATED":
-				onRoomCreatedEvent?.Invoke(true);
+				onRoomCreatedEvent?.Invoke(Int32.Parse(MessageChunks [1]));
 				Console.WriteLine($"room {MessageChunks [1]} has been created");
+				break;
+
+				case "ROOMMSG":
+				onRoomMessageRecievedEvent?.Invoke((Int32.Parse(MessageChunks [1]), MessageChunks [2]));
 				break;
 
 				case "USERJOINED":
@@ -159,6 +184,13 @@ namespace NetClient
 			await SendMessage(msg.ToString());
 		}
 
+		public async Task SendMessageToRoomAsync(int RoomID, String Message)
+		{
+			var msg = new StringBuilder();
+			msg.Append($"SENDMSGTOROOM:{RoomID}:{Message}");
+			await SendMessage(msg.ToString());
+		}
+
 		public async Task UpdateUserList()
 		{
 			await SendMessage("GETUSERLIST");
@@ -166,9 +198,13 @@ namespace NetClient
 
 		public async Task RefreshRoomList()
 		{
+			refreshing = true;
 			var msg = new StringBuilder();
-			msg.Append("GETROOMLIST");
+			msg.Append("GETROOMLIST*JSON");
 			await SendMessage(msg.ToString());
+			
+			
+
 		}
 
 		public async Task Authenticate(string userName, string passWord)

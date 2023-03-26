@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace MessageServer.Data
 {
-	[Serializable]
 	public class Room
 	{
 		public enum RoomStatusCodes
@@ -14,30 +15,36 @@ namespace MessageServer.Data
 			PASSWORDFAILED
 		}
 
-		private Guid RoomID = Guid.NewGuid();
-		private List<User> usersInRoom;
-		private List<User> bannedList;
-		private string RoomName;
-		private bool isRoomLocked { get { return isRoomLocked; } }
-		private string roomKey = string.Empty;
-		private DateTime roomCreation = DateTime.Now;
-		private User creator;
-		private int _roomLimit;
-		private bool _isPublic;
+		public Guid RoomID = Guid.NewGuid();
+		public List<User> usersInRoom = new List<User>();
+		public List<User> bannedList;
+		public string RoomName;
+		public bool isRoomLocked;
+		public string roomKey = string.Empty;
+		public DateTime roomCreation = DateTime.Now;
+		public User creator;
+		public int _roomLimit;
+		public bool _isPublic;
+
+		
 
 		public Room(User creator, int roomLimit, bool isPublic)
 		{
 			this.creator = creator;
 			_roomLimit = roomLimit;
 			_isPublic = isPublic;
+			usersInRoom.Add(creator);
 
 		}
+
 
 		public List<User> GetUsersInRoom()
 		{
 			return usersInRoom;
 
 		}
+
+
 
 		public string GetRoomName()
 		{

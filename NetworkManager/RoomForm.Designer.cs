@@ -67,6 +67,7 @@
 			SendMessageButton.TabIndex = 3;
 			SendMessageButton.Text = "Send Msg";
 			SendMessageButton.UseVisualStyleBackColor = true;
+			SendMessageButton.Click += SendMessageButton_Click;
 			// 
 			// RoomForm
 			// 

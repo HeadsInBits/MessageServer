@@ -3,7 +3,6 @@ using System.Data.SqlClient;
 
 namespace MessageServer.Data
 {
-	[Serializable]
 	public class User
 	{
 		private string _userName;

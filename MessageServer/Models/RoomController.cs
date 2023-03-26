@@ -1,4 +1,8 @@
 ﻿using MessageServer.Data;
+using Newtonsoft.Json;
+using System.Security.Principal;
+using System.Text.Json;
+using System.Xml;
 
 namespace MessageServer.Models;
 
@@ -17,6 +21,8 @@ public class RoomController
 	{
 		return privateRooms [roomId].GetUsersInRoom();
 	}
+
+    
 
 	public List<int> FindUserInRooms(User user)
 	{
@@ -41,6 +47,15 @@ public class RoomController
 	{
 		return privateRooms;
 	}
+
+	public string JSONGetRoomList()
+	{
+		string output = JsonConvert.SerializeObject(privateRooms, Newtonsoft.Json.Formatting.Indented);
+	//	Console.WriteLine(output);
+		return output;
+	}
+
+	
 
 	public Room.RoomStatusCodes AddUserToRoom(User userToAdd, int roomNumber)
 	{

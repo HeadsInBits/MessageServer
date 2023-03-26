@@ -47,6 +47,7 @@ partial class Form1
 		CreateRoomButton = new Button();
 		RefreshRoomsButton = new Button();
 		RoomList = new ListBox();
+		JoinRoomButton = new Button();
 		tabControl1.SuspendLayout();
 		NetworkTab.SuspendLayout();
 		groupBox1.SuspendLayout();
@@ -206,6 +207,7 @@ partial class Form1
 		// 
 		// groupBox3
 		// 
+		groupBox3.Controls.Add(JoinRoomButton);
 		groupBox3.Controls.Add(CreateRoomButton);
 		groupBox3.Controls.Add(RefreshRoomsButton);
 		groupBox3.Controls.Add(RoomList);
@@ -244,6 +246,16 @@ partial class Form1
 		RoomList.Name = "RoomList";
 		RoomList.Size = new Size(249, 424);
 		RoomList.TabIndex = 0;
+		// 
+		// JoinRoomButton
+		// 
+		JoinRoomButton.Location = new Point(7, 490);
+		JoinRoomButton.Name = "JoinRoomButton";
+		JoinRoomButton.RightToLeft = RightToLeft.Yes;
+		JoinRoomButton.Size = new Size(122, 23);
+		JoinRoomButton.TabIndex = 3;
+		JoinRoomButton.Text = "Join Room";
+		JoinRoomButton.UseVisualStyleBackColor = true;
 		// 
 		// Form1
 		// 
@@ -288,4 +300,5 @@ partial class Form1
 	private Button CreateRoomButton;
 	private Button RefreshRoomsButton;
 	private ListBox RoomList;
+	private Button JoinRoomButton;
 }

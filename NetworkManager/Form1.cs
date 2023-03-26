@@ -6,7 +6,7 @@ namespace NetworkManager;
 
 public partial class Form1 : Form
 {
-	NetClient.Client netClient = new NetClient.Client();
+	public NetClient.Client netClient = new NetClient.Client();
 
 
 	public Form1()
@@ -33,20 +33,16 @@ public partial class Form1 : Form
 		await Task.FromResult(netClient.Authenticate(UserInput.Text, PasswordInput.Text));
 	}
 
-	private async void RefreshRoomsButton_Click(object sender, EventArgs e)
+	private void RefreshRoomsButton_Click(object sender, EventArgs e)
 	{
-		
-		await Task.FromResult(
-		netClient.RefreshRoomList());
 
-		MessageBox.Show("Room List Refresh Sent");
+		
+		netClient.RefreshRoomList();
 	}
 
-	private async void CreateRoomButton_Click(object sender, EventArgs e)
+	private void CreateRoomButton_Click(object sender, EventArgs e)
 	{
-		await netClient.CreateRoom("Manic");
-		MessageBox.Show("Sent Room Request");
-
+		netClient.CreateRoom("Manic");
 	}
 
 	private void Form1_Load(object sender, EventArgs e)
@@ -57,34 +53,48 @@ public partial class Form1 : Form
 		netClient.onRoomJoinedEvent += NetClient_onRoomJoinedEvent;
 		netClient.onRoomListRecievedEvent += NetClient_onRoomListRecievedEvent;
 		netClient.onUserListRecievedEvent += NetClient_onUserListRecievedEvent;
+		netClient.onRoomMessageRecievedEvent += NetClient_onRoomMessageRecievedEvent;
+	}
+
+	private void NetClient_onRoomMessageRecievedEvent((int RoomID, string Message) obj)
+	{
+		MessageBox.Show($"Got Message from Room{obj.RoomID} :- {obj.Message}");
 	}
 
 	private void NetClient_onUserListRecievedEvent(List<User> obj)
 	{
 		UserList.Items.Clear();
 
-		foreach(var item in obj) {
+		foreach (var item in obj) {
 			UserList.Items.Add(item);
 		}
 	}
 
-	private void NetClient_onRoomListRecievedEvent(List<Guid> obj)
+	private void NetClient_onRoomListRecievedEvent(List<Room> obj)
 	{
-		MessageBox.Show("Room List Reiceved");
-		foreach(var room in netClient.roomList) { 
-			RoomList.Items.Add(room);
+		RoomList.Items.Clear();
+		foreach (var room in netClient.GetRoomList()) {
+			RoomList.Items.Add(room.RoomID);
 		}
 	}
 
 	private void NetClient_onRoomJoinedEvent(bool obj)
 	{
-		throw new NotImplementedException();
+	
+
+		//throw new NotImplementedException();
 	}
 
-	private void NetClient_onRoomCreatedEvent(bool obj)
+	private void NetClient_onRoomCreatedEvent(int obj)
 	{
-		MessageBox.Show("Room Created: "+  obj);
-		throw new NotImplementedException();
+		netClient.RefreshRoomList();
+
+		RoomForm roomForm = new RoomForm(netClient);
+		roomForm.RoomID = obj;
+	//	roomForm.thisRoom = netClient.roomList [obj];
+	    roomForm.Show();
+
+		//throw new NotImplementedException();
 	}
 
 	private void NetClient_onMessageRecievedEvent(string obj)
@@ -96,12 +106,13 @@ public partial class Form1 : Form
 	{
 
 		if (obj) {
-			LoginButton.BackColor= Color.Green;	
+			LoginButton.BackColor = Color.Green;
 			LoginStatusStrip.Text = "Login OK + Authenticated";
 
-		} else { 
-			LoginButton.BackColor= Color.Red;
-			LoginStatusStrip.Text="Login Failed!";
+		}
+		else {
+			LoginButton.BackColor = Color.Red;
+			LoginStatusStrip.Text = "Login Failed!";
 		}
 
 	}

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MessageServer.Data;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -12,14 +13,31 @@ namespace NetworkManager
 {
 	public partial class RoomForm : Form
 	{
-		public RoomForm()
+		public Room thisRoom;
+		public int RoomID;
+		public NetClient.Client myClient;
+
+		public RoomForm(Room room)
+		{
+			thisRoom = room;
+			InitializeComponent();
+		}
+
+		public RoomForm(NetClient.Client myClient)
 		{
 			InitializeComponent();
+			this.myClient = myClient;
 		}
 
 		private void RoomForm_Load(object sender, EventArgs e)
 		{
+			this.Text = "Room Loaded:" + RoomID;
 
+		}
+
+		private void SendMessageButton_Click(object sender, EventArgs e)
+		{
+			myClient.SendMessageToRoomAsync(RoomID, MessageInput.Text);
 		}
 	}
 }
