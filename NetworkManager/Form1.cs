@@ -42,7 +42,7 @@ public partial class Form1 : Form
 
 	private void CreateRoomButton_Click(object sender, EventArgs e)
 	{
-		netClient.CreateRoom("Manic");
+		netClient.CreateRoom("Manic", 50, true);
 	}
 
 	private void Form1_Load(object sender, EventArgs e)
@@ -78,7 +78,7 @@ public partial class Form1 : Form
 		}
 	}
 
-	private void NetClient_onRoomJoinedEvent(bool obj)
+	private void NetClient_onRoomJoinedEvent(string obj)
 	{
 	
 

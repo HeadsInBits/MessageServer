@@ -25,18 +25,14 @@ namespace NetClient
 		//Events
 		public event Action<string> onMessageRecievedEvent;
 		public event Action<bool> onAuthenticateEvent;
-						
 		public event Action<List<User>> onUserListRecievedEvent;
-		public event Action<bool> onUserJoinedEvent;
-		public event Action<bool> onUserLeftEvent;
-
+		public event Action<string> onUserJoinedEvent;
+		public event Action<string> onUserLeftEvent;
 		public event Action<List<Room>> onRoomListRecievedEvent;
 		public event Action<int> onRoomCreatedEvent;
-		public event Action<bool> onRoomJoinedEvent;
+		public event Action<string> onRoomJoinedEvent;
 		public event Action<(int RoomID, string Message)> onRoomMessageRecievedEvent;
-
 		public event Action<int> onIDRecievedEvent;
-
 
 		~Client()
 		{
@@ -87,41 +83,40 @@ namespace NetClient
 
 			switch (MessageChunks [0]) {
 				case "AUTH": // authorisation accepted by the server.
-				if (MessageChunks [1] == "OK") {
-					isClientValidated = true;
-					onAuthenticateEvent?.Invoke(true);
+					if (MessageChunks [1] == "OK") {
+						isClientValidated = true;
+						onAuthenticateEvent?.Invoke(true);
+						break;
+					}
+					else {
+						onAuthenticateEvent?.Invoke(false);
+						throw new AuthenticationException("User is not Validated");
+						break;
+					}
 					break;
-				}
-				else {
-					onAuthenticateEvent?.Invoke(false);
-					throw new AuthenticationException("User is not Validated");
-					break;
-				}
-				break;
 
 				case "IDIS":
-				ClientID = System.Int32.Parse(MessageChunks [1]);
-				onIDRecievedEvent?.Invoke(ClientID);
-				break;
+					ClientID = System.Int32.Parse(MessageChunks [1]);
+					onIDRecievedEvent?.Invoke(ClientID);
+					break;
 
 				case "USERLIST":
-				int numberOfUsers = Int32.Parse(MessageChunks [1]);
-				networkUsers.Clear();
-				for (int counter = 0; counter < numberOfUsers; counter++) {
-					networkUsers.Add(new User(MessageChunks [3 + counter], true)  );
-				}
-				onUserListRecievedEvent?.Invoke(networkUsers);
-				break;
+					int numberOfUsers = Int32.Parse(MessageChunks [1]);
+					networkUsers.Clear();
+					for (int counter = 0; counter < numberOfUsers; counter++) {
+						networkUsers.Add(new User(MessageChunks [3 + counter], true)  );
+					}
+					onUserListRecievedEvent?.Invoke(networkUsers);
+					break;
 
 				case "RECIEVEMESSAGE":
-				ReceiveMessage(MessageChunks [1], MessageChunks [2]);
-				onMessageRecievedEvent?.Invoke(MessageChunks [2]);
-				break;
+					ReceiveMessage(MessageChunks [1], MessageChunks [2]);
+					onMessageRecievedEvent?.Invoke(MessageChunks [2]);
+					break;
 
 				//case "ROOMLIST":
 				//roomList.Clear();
 				//int numberOfRooms = Int32.Parse(MessageChunks [1]);
-
 				//for (int counter = 0; counter < numberOfRooms; counter++) {
 				//	roomList.Add(Guid.Parse(MessageChunks [2 + counter]));
 				//}
@@ -129,38 +124,40 @@ namespace NetClient
 				//break;
 
 				case "ROOMLIST*JSON":
-
-				string jsonData = receivedMessage.Substring(MessageChunks [0].Length + 1);
-
-				
-				roomList.Clear();
-				List<Room> JsonDe = JsonConvert.DeserializeObject<List<Room>>(jsonData);
-				roomList = JsonDe;
-				refreshing = false;
-				onRoomListRecievedEvent?.Invoke(JsonDe);
-				break;
+					string jsonData = receivedMessage.Substring(MessageChunks [0].Length + 1);
+					roomList.Clear();
+					List<Room> JsonDe = JsonConvert.DeserializeObject<List<Room>>(jsonData);
+					roomList = JsonDe;
+					refreshing = false;
+					onRoomListRecievedEvent?.Invoke(JsonDe);
+					break;
 
 				case "ROOMJOINED":
-				onRoomJoinedEvent?.Invoke(true);
-				Console.WriteLine($"joined room {MessageChunks [1]}");
-				break;
+					onRoomJoinedEvent?.Invoke(MessageChunks [1]);
+					Console.WriteLine($"joined room {MessageChunks [1]}");
+					break;
 
 				case "ROOMCREATED":
-				onRoomCreatedEvent?.Invoke(Int32.Parse(MessageChunks [1]));
-				Console.WriteLine($"room {MessageChunks [1]} has been created");
-				break;
+					onRoomCreatedEvent?.Invoke(Int32.Parse(MessageChunks [1]));
+					Console.WriteLine($"room {MessageChunks [1]} has been created");
+					break;
 
 				case "ROOMMSG":
-				onRoomMessageRecievedEvent?.Invoke((Int32.Parse(MessageChunks [1]), MessageChunks [2]));
-				break;
+					onRoomMessageRecievedEvent?.Invoke((Int32.Parse(MessageChunks [1]), MessageChunks [2]));
+					break;
 
 				case "USERJOINED":
-				onUserJoinedEvent?.Invoke(true);
-				Console.WriteLine($"{MessageChunks [1]} joined room");
-				break;
+					onUserJoinedEvent?.Invoke(MessageChunks [1]);
+					Console.WriteLine($"{MessageChunks [1]} joined room");
+					break;
+				
+				case "USERLEFT":
+					onUserLeftEvent?.Invoke(MessageChunks [1]);
+					Console.WriteLine($"{MessageChunks [1]} left room");
+					break;
 
 				default:
-				throw new NotSupportedException();
+					throw new NotSupportedException();
 
 
 			}
@@ -179,10 +176,10 @@ namespace NetClient
 
 		}
 
-		public async Task CreateRoom(string userName)
+		public async Task CreateRoom(string meta, int roomSize, bool isPublic)
 		{
 			var msg = new StringBuilder();
-			msg.Append("CREATEROOM:2:PRIVATE");
+			msg.Append($"CREATEROOM:{roomSize}:{(isPublic?"PUBLIC":"PRIVATE")}:{meta}");
 			await SendMessage(msg.ToString());
 		}
 
@@ -219,6 +216,14 @@ namespace NetClient
 		{
 			string msg = $"SENDMESGTOUSER:{userName}:{Message}";
 			await SendMessage(msg);
+		}
+		
+		public async Task CloseSocket()
+		{
+			if (webSocket != null && webSocket.State == WebSocketState.Open)
+			{
+				await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Script destroyed", CancellationToken.None);
+			}
 		}
 
 	}

@@ -25,16 +25,17 @@ namespace MessageServer.Data
 		public User creator;
 		public int _roomLimit;
 		public bool _isPublic;
+		public string Meta = "";
 
-		
 
-		public Room(User creator, int roomLimit, bool isPublic)
+
+		public Room(User creator, int roomLimit, bool isPublic, string meta)
 		{
 			this.creator = creator;
 			_roomLimit = roomLimit;
 			_isPublic = isPublic;
 			usersInRoom.Add(creator);
-
+			Meta = meta;
 		}
 
 

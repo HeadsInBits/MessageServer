@@ -12,7 +12,7 @@ public class RoomController
 
 	public int CreateNewRoom(User roomCreator, string [] messageChunks)
 	{
-		Room tmpRoom = new Room(roomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC");
+		Room tmpRoom = new Room(roomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", messageChunks [3]);
 		privateRooms.Add(tmpRoom);
 		return privateRooms.IndexOf(tmpRoom);
 	}

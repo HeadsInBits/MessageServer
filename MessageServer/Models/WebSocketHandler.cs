@@ -248,6 +248,7 @@ public class WebSocketHandler
 			case "CREATEROOM":
 			int roomNumber = _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index), messageChunks);
 			SendMessage(index, $"ROOMCREATED:{roomNumber}");
+			SendMessage(index, "ROOMJOINED:" + roomNumber);
 			break;
 
 			case "ADDUSERTOROOM":
