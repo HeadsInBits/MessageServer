@@ -42,12 +42,17 @@ namespace NetClient
 		public async Task Connect()
 		{
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
+		}
 
-			byte [] receiveBuffer = new byte [16384];
+		public async Task Listen()
+		{
+			byte[] receiveBuffer = new byte [16384];
 			ArraySegment<byte> receiveSegment = new ArraySegment<byte>(receiveBuffer);
-			while (webSocket.State == WebSocketState.Open) {
+			while (webSocket.State == WebSocketState.Open)
+			{
 				WebSocketReceiveResult result = await webSocket.ReceiveAsync(receiveSegment, CancellationToken.None);
-				if (result.MessageType == WebSocketMessageType.Text) {
+				if (result.MessageType == WebSocketMessageType.Text)
+				{
 					string receivedMessage = System.Text.Encoding.UTF8.GetString(receiveBuffer, 0, result.Count);
 
 					ProcessIncomingMessage(receivedMessage);

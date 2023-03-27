@@ -29,7 +29,8 @@ public partial class Form1 : Form
 	private async void RunLogin()
 	{
 
-		await Task.FromResult(netClient.Connect());
+		await netClient.Connect();
+		await Task.FromResult(netClient.Listen());
 		await Task.FromResult(netClient.Authenticate(UserInput.Text, PasswordInput.Text));
 	}
 
