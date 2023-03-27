@@ -19,8 +19,7 @@ namespace NetClient
 		public List<User> networkUsers = new List<User>();
 		public List<Room> roomList = new List<Room>();
 		public List<Room> subscribedRooms = new List<Room>();
-
-		public bool refreshing = false;
+		
 
 		//Events
 		public event Action<string> onMessageRecievedEvent;
@@ -79,8 +78,8 @@ namespace NetClient
 				}
 			}
 		}
-
-		public List<Room> GetRoomList()
+		
+		public List<Room> GetLocalClientRoomList()
 		{
 			return roomList;
 		}
@@ -154,7 +153,6 @@ namespace NetClient
 					roomList.Clear();
 					List<Room> JsonDe = JsonConvert.DeserializeObject<List<Room>>(jsonData);
 					roomList = JsonDe;
-					refreshing = false;
 					onRoomListRecievedEvent?.Invoke(JsonDe);
 					break;
 
@@ -223,9 +221,8 @@ namespace NetClient
 			await SendMessage("GETUSERLIST");
 		}
 
-		public async Task RefreshRoomList()
+		public async Task RequestRoomList()
 		{
-			refreshing = true;
 			var msg = new StringBuilder();
 			msg.Append("GETROOMLIST*JSON");
 			await SendMessage(msg.ToString());
@@ -242,14 +239,7 @@ namespace NetClient
 			string msg = $"SENDMESGTOUSER:{userName}:{Message}";
 			await SendMessage(msg);
 		}
-		
-		public async Task CloseSocket()
-		{
-			if (webSocket != null && webSocket.State == WebSocketState.Open)
-			{
-				await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Script destroyed", CancellationToken.None);
-			}
-		}
+
 
 	}
 }

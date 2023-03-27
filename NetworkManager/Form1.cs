@@ -38,7 +38,7 @@ public partial class Form1 : Form
 	{
 
 		
-		netClient.RefreshRoomList();
+		netClient.RequestRoomList();
 	}
 
 	private void CreateRoomButton_Click(object sender, EventArgs e)
@@ -74,7 +74,7 @@ public partial class Form1 : Form
 	private void NetClient_onRoomListRecievedEvent(List<Room> obj)
 	{
 		RoomList.Items.Clear();
-		foreach (var room in netClient.GetRoomList()) {
+		foreach (var room in netClient.GetLocalClientRoomList()) {
 			RoomList.Items.Add(room.RoomID);
 		}
 	}
@@ -86,9 +86,9 @@ public partial class Form1 : Form
 		//throw new NotImplementedException();
 	}
 
-	private void NetClient_onRoomCreatedEvent(int obj)
+	private async void NetClient_onRoomCreatedEvent(int obj)
 	{
-		netClient.RefreshRoomList();
+		await netClient.RequestRoomList();
 
 		RoomForm roomForm = new RoomForm(netClient);
 		roomForm.RoomID = obj;
