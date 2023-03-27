@@ -10,7 +10,7 @@ namespace NetClient
 {
 	public class Client
 	{
-		ClientWebSocket webSocket = new ClientWebSocket();
+		ClientWebSocket webSocket;
 		Uri serverUri = new Uri("ws://localhost:8080/");
 
 		private bool isClientValidated = false;
@@ -34,13 +34,30 @@ namespace NetClient
 		public event Action<(int RoomID, string Message)> onRoomMessageRecievedEvent;
 		public event Action<int> onIDRecievedEvent;
 
+		private bool DisconnectOnFailAuthentication = false;
+
 		~Client()
 		{
 			 this.Disconnect();
 		}
 
+		public void SetDisconnectOnFailAuthentication(bool on)
+		{
+			DisconnectOnFailAuthentication = on;
+		}
+		
+		public async Task Connect(string url, string port)
+		{
+			// Create a new WebSocket instance and connect to the server
+			webSocket = new ClientWebSocket();
+			Uri serverUri = new Uri($"ws://{url}:{port}/");
+			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
+		}
+
 		public async Task Connect()
 		{
+			// Create a new WebSocket instance and connect to the server
+			webSocket = new ClientWebSocket();
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
 		}
 
@@ -55,7 +72,10 @@ namespace NetClient
 				{
 					string receivedMessage = System.Text.Encoding.UTF8.GetString(receiveBuffer, 0, result.Count);
 
-					ProcessIncomingMessage(receivedMessage);
+					if (!ProcessIncomingMessage(receivedMessage))
+					{
+						return;
+					}
 				}
 			}
 		}
@@ -80,7 +100,7 @@ namespace NetClient
 		{
 			await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Destroyed", CancellationToken.None);
 		}
-		private void ProcessIncomingMessage(string receivedMessage)
+		private bool ProcessIncomingMessage(string receivedMessage)
 		{
 			Console.WriteLine("INCOMING MESSAGE!: " + receivedMessage);
 
@@ -95,6 +115,7 @@ namespace NetClient
 					}
 					else {
 						onAuthenticateEvent?.Invoke(false);
+						if (DisconnectOnFailAuthentication) return false;
 						throw new AuthenticationException("User is not Validated");
 						break;
 					}
@@ -167,6 +188,8 @@ namespace NetClient
 
 			}
 
+			return true;
+
 		}
 
 		private void ReceiveMessage(string userName, string Message)
@@ -206,9 +229,6 @@ namespace NetClient
 			var msg = new StringBuilder();
 			msg.Append("GETROOMLIST*JSON");
 			await SendMessage(msg.ToString());
-			
-			
-
 		}
 
 		public async Task Authenticate(string userName, string passWord)
