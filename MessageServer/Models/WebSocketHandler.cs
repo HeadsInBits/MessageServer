@@ -214,10 +214,6 @@ public class WebSocketHandler
 				}
 
 				SendMessage(index, "AUTH:OK");
-				SendMessage(index, "AUTH:OK");
-				
-		
-				
 			}
 			else // not authenticated
 			{
