@@ -57,6 +57,11 @@ public partial class Form1 : Form
 		netClient.onRoomMessageRecievedEvent += NetClient_onRoomMessageRecievedEvent;
 	}
 
+	private void NetClient_onMessageRecievedEvent((User user, string message) obj)
+	{
+		MessageBox.Show($"Message Recieved: {obj.message}", obj.user.GetUserName());
+	}
+
 	private void NetClient_onRoomMessageRecievedEvent((int RoomID, string Message) obj)
 	{
 		MessageBox.Show($"Got Message from Room{obj.RoomID} :- {obj.Message}");
@@ -96,11 +101,6 @@ public partial class Form1 : Form
 	    roomForm.Show();
 
 		//throw new NotImplementedException();
-	}
-
-	private void NetClient_onMessageRecievedEvent(string obj)
-	{
-		MessageBox.Show("Message Recieved: ", obj);
 	}
 
 	private void NetClient_onAuthenticateEvent(bool obj)

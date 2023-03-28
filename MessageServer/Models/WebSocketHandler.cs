@@ -2,6 +2,7 @@
 using System.Net.WebSockets;
 using System.Reflection.Metadata;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace MessageServer.Models;
 
@@ -90,7 +91,7 @@ public class WebSocketHandler
 	{
 		foreach (var u in _userController.connectedClients) {
 			if (u.GetUserName() == username) {
-				SendMessage(u.WebSocketID, "RECIEVEMESSAGE:" + message);
+				SendMessage(u.WebSocketID, $"RECIEVEMESSAGE:{JsonConvert.SerializeObject(u)}:{message}");
 			}
 		}
 	}

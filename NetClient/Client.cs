@@ -22,7 +22,7 @@ namespace NetClient
 		
 
 		//Events
-		public event Action<string> onMessageRecievedEvent;
+		public event Action<(User user, string message)> onMessageRecievedEvent;
 		public event Action<bool> onAuthenticateEvent;
 		public event Action<List<User>> onUserListRecievedEvent;
 		public event Action<string> onUserJoinedEvent;
@@ -135,8 +135,9 @@ namespace NetClient
 					break;
 
 				case "RECIEVEMESSAGE":
-					ReceiveMessage(MessageChunks [1], MessageChunks [2]);
-					onMessageRecievedEvent?.Invoke(MessageChunks [2]);
+					User? user = JsonConvert.DeserializeObject<User>(MessageChunks [1]);
+					ReceiveMessage(user,MessageChunks [2]);
+					onMessageRecievedEvent?.Invoke((user, MessageChunks [3]));
 					break;
 
 				//case "ROOMLIST":
@@ -190,9 +191,10 @@ namespace NetClient
 
 		}
 
-		private void ReceiveMessage(string userName, string Message)
+		private void ReceiveMessage(User user, string Message)
 		{
-			onMessageRecievedEvent?.Invoke(Message);
+			//already called this
+			//onMessageRecievedEvent?.Invoke((user, Message));
 		}
 
 		private async Task SendMessage(string message)
