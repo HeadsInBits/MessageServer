@@ -5,8 +5,8 @@ namespace MessageServer.Data
 {
 	public class User
 	{
-		private string _userName;
-		private bool _isValidated;
+		public string _userName;
+		public bool _isValidated;
 		public int WebSocketID;
 
 		public User(string userName, bool isValidated)

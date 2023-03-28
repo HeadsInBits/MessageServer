@@ -87,11 +87,13 @@ public class WebSocketHandler
 		}
 	}
 
-	private void CommsToUser(string username, string message)
+	private void CommsToUser(string jsonUserData, string message)
 	{
+		Console.WriteLine(jsonUserData);
+		User com = JsonConvert.DeserializeObject<User>(jsonUserData);
 		foreach (var u in _userController.connectedClients) {
-			if (u.GetUserName() == username) {
-				SendMessage(u.WebSocketID, $"RECIEVEMESSAGE:{JsonConvert.SerializeObject(u)}:{message}");
+			if (u.GetUserName() == com.GetUserName()) {
+				SendMessage(u.WebSocketID, $"RECIEVEMESSAGE:{jsonUserData}:{message}");
 			}
 		}
 	}
@@ -233,8 +235,9 @@ public class WebSocketHandler
 
 			//todo:sender should be sent with message for validation here or CommsToUser, also should have a return format i.e "SENDMESGTOUSER:USER:01:MESSAGE:Hello"
 			case "SENDMESGTOUSER":
+				string jsonStrUser = message.Substring(messageChunks[0].Length + 1, message.Length - (messageChunks [^1].Length + messageChunks [0].Length + 2));
 			Console.WriteLine("Sending a Direct Message to:" + messageChunks [1]);
-			CommsToUser(messageChunks [1], messageChunks [2]);
+			CommsToUser(jsonStrUser, messageChunks [^1]);
 			break;
 
 			//TODO:sender should be sent with message for validation here or CommsToAllButSender, also should have a return format i.e "SENDMESGTOALL:USER:01:MESSAGE:Hello"

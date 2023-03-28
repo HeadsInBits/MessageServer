@@ -8,7 +8,7 @@ public partial class Form1 : Form
 {
 	public NetClient.Client netClient = new NetClient.Client();
 
-
+	 
 	public Form1()
 	{
 		InitializeComponent();
