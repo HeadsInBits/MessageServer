@@ -29,7 +29,7 @@ public partial class Form1 : Form
 	private async void RunLogin()
 	{
 
-		await netClient.Connect();
+		await netClient.Connect("localhost","8080");
 		await Task.FromResult(netClient.Listen());
 		await Task.FromResult(netClient.Authenticate(UserInput.Text, PasswordInput.Text));
 	}

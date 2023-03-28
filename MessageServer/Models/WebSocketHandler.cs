@@ -13,6 +13,8 @@ public class WebSocketHandler
 	private RoomController _roomController = new RoomController();
 	private UserController _userController = new UserController();
 
+	DBManager dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
+
 	private bool logginEnabled = true;
 
 	public void AddSocket(WebSocket socket)
@@ -41,7 +43,7 @@ public class WebSocketHandler
 		}
 	}
 
-	private async void StartHandling(WebSocket socket, int index)
+	private async Task StartHandling(WebSocket socket, int index)
 	{
 		// Handle WebSocket messages in a separate thread
 		var buffer = new byte [16384];
@@ -54,12 +56,10 @@ public class WebSocketHandler
 				if (result.MessageType == WebSocketMessageType.Close) {
 					// Close the socket
 					sockets [index] = null;
-					
 					Console.WriteLine("Client Disconnected:" + index);
 					_userController.connectedClients.Remove(_userController.GetUserProfileFromSocketId(index));
 					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
 						CancellationToken.None);
-
 				}
 				else if (result.MessageType == WebSocketMessageType.Binary ||
 						 result.MessageType == WebSocketMessageType.Text) {
@@ -285,7 +285,7 @@ public class WebSocketHandler
 
 	private User? ValidateUser(string message)
 	{
-		DBManager dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
+		
 		var messageChunks = message.Split(":");
 		if (messageChunks.Length < 3)
 			throw new Exception();
