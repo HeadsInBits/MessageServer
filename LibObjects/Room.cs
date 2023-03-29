@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Text;
+using MessageServer.Data;
+using Newtonsoft.Json;
 
-namespace MessageServer.Data
+namespace LibObjects
 {
 	public class Room
 	{
@@ -14,7 +14,6 @@ namespace MessageServer.Data
 			ROOMLOCKED,
 			PASSWORDFAILED
 		}
-
 		public Guid RoomID = Guid.NewGuid();
 		public List<User> usersInRoom = new List<User>();
 		public List<User> bannedList;
@@ -44,8 +43,6 @@ namespace MessageServer.Data
 			return usersInRoom;
 
 		}
-
-
 
 		public string GetRoomName()
 		{
@@ -82,6 +79,44 @@ namespace MessageServer.Data
 			bannedList.Add(usrToBan);
 			return RoomStatusCodes.OK;
 		}
+		
+		//TODO: NOW SERIALISATION AND DESERIALIZATION IS HAPPENING HERE WE COULD:
+		//1. CHANGE THE FORMAT
+		//2. VALIDATE ALL IN ONE PLACE
+		//3. RESTRICT DATA BEING PASSED
+		//4. OPTIMISE FOR DATA SIZE
+		//5. ENCRYPT?
 
+		public static List<Room> GetRoomListFromJson(string jsonData)
+		{
+			return JsonConvert.DeserializeObject<List<Room>>(jsonData);
+		}
+		
+		public static string GetJsonFromRoomList(List<Room> rooms)
+		{
+			return JsonConvert.SerializeObject(rooms, Formatting.Indented);
+		}
+		
+		public static Room GetRoomFromJson(string JsonString)
+		{
+			return JsonConvert.DeserializeObject<Room>(JsonString);
+		}
+		
+		public static string GetJsonFromRoom(Room room)
+		{
+			return JsonConvert.SerializeObject(room, Formatting.Indented);
+		}
+
+		public User GetUserByGuid(Guid userId)
+		{
+			foreach (User user in usersInRoom)
+			{
+				if (user.GetUserID() == userId)
+				{
+					return user;
+				}
+			}
+			return new User("N/A", false, Guid.Empty);
+		}
 	}
 }

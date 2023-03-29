@@ -1,69 +1,69 @@
 ﻿using MessageServer.Data;
-using Newtonsoft.Json;
 using System.Security.Principal;
 using System.Text.Json;
 using System.Xml;
+using LibObjects;
 
 namespace MessageServer.Models;
 
 public class RoomController
 {
-	private List<Room> privateRooms = new List<Room>();
+	private Dictionary<Guid,Room> RoomDictionary = new Dictionary<Guid, Room>();
 
-	public int CreateNewRoom(User roomCreator, string [] messageChunks)
+	public Room CreateNewRoom(User roomCreator, string [] messageChunks)
 	{
 		Room tmpRoom = new Room(roomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", messageChunks [3]);
-		privateRooms.Add(tmpRoom);
-		return privateRooms.IndexOf(tmpRoom);
+		RoomDictionary.Add(tmpRoom.GetGuid(), tmpRoom);
+		return tmpRoom;
 	}
 
-	public List<User> GetUsersInRoom(int roomId)
+	public List<User> GetUsersInRoom(Guid roomId)
 	{
-		return privateRooms [roomId].GetUsersInRoom();
+		return RoomDictionary [roomId].GetUsersInRoom();
 	}
-
-    
-
-	public List<int> FindUserInRooms(User user)
+	public List<Guid> FindAllRoomsWhereUserInRoom(User user)
 	{
 		int counter = 0;
 
-		List<int> roomList = new List<int>();
+		List<Guid> roomList = new List<Guid>();
 
-		foreach (var room in privateRooms) {
-			foreach (var usr in room.GetUsersInRoom()) {
+		foreach (var pair in RoomDictionary) {
+			foreach (var usr in pair.Value.GetUsersInRoom()) {
 				if (usr == user) {
-					roomList.Add(item: counter);
+					roomList.Add(pair.Key);
 				}
 			}
-
 			counter++;
 		}
-
 		return roomList;
 	}
 
-	public List<Room> GetRoomList()
+	public Dictionary<Guid, Room> GetRoomList()
 	{
-		return privateRooms;
+		return RoomDictionary;
 	}
 
 	public string JSONGetRoomList()
 	{
-		string output = JsonConvert.SerializeObject(privateRooms, Newtonsoft.Json.Formatting.Indented);
+		List<Room> rooms = new List<Room>();
+		foreach (var pair in RoomDictionary)
+		{
+			rooms.Add(pair.Value);
+		}
+		string output = Room.GetJsonFromRoomList(rooms);
 	//	Console.WriteLine(output);
 		return output;
 	}
 
 	
 
-	public Room.RoomStatusCodes AddUserToRoom(User userToAdd, int roomNumber)
+	public Room.RoomStatusCodes AddUserToRoom(User userToAdd, Guid roomNumber)
 	{
-		return privateRooms [roomNumber].AddUserToRoom(userToAdd);
+		return RoomDictionary [roomNumber].AddUserToRoom(userToAdd);
 	}
 
-	public void DestroyRoom(int index)
+	public void DestroyRoom(Guid index)
 	{
-		privateRooms.RemoveAt(index);
+		RoomDictionary.Remove(index);
 	}
 }

@@ -1,6 +1,7 @@
 using MessageServer.Data;
 using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
+using LibObjects;
 
 namespace NetworkManager;
 
@@ -57,14 +58,31 @@ public partial class Form1 : Form
 		netClient.onRoomMessageRecievedEvent += NetClient_onRoomMessageRecievedEvent;
 	}
 
+	private void NetClient_onRoomMessageRecievedEvent((Room room, User user, string Message) obj)
+	{
+		MessageBox.Show($"Got Message from Room{obj.room.RoomID} :- {obj.Message}");
+	}
+
+	private void NetClient_onRoomJoinedEvent(Room obj)
+	{
+		//TODO
+	}
+
+	private async void NetClient_onRoomCreatedEvent(Room obj)
+	{
+		await netClient.RequestRoomList();
+
+		RoomForm roomForm = new RoomForm(netClient);
+		roomForm.RoomID = obj.GetGuid();
+	//	roomForm.thisRoom = netClient.roomList [obj];
+	    roomForm.Show();
+
+		//throw new NotImplementedException();
+	}
+
 	private void NetClient_onMessageRecievedEvent((User user, string message) obj)
 	{
 		MessageBox.Show($"Message Recieved: {obj.message}", obj.user.GetUserName());
-	}
-
-	private void NetClient_onRoomMessageRecievedEvent((int RoomID, string Message) obj)
-	{
-		MessageBox.Show($"Got Message from Room{obj.RoomID} :- {obj.Message}");
 	}
 
 	private void NetClient_onUserListRecievedEvent(List<User> obj)
@@ -84,24 +102,7 @@ public partial class Form1 : Form
 		}
 	}
 
-	private void NetClient_onRoomJoinedEvent(string obj)
-	{
-	
 
-		//throw new NotImplementedException();
-	}
-
-	private async void NetClient_onRoomCreatedEvent(int obj)
-	{
-		await netClient.RequestRoomList();
-
-		RoomForm roomForm = new RoomForm(netClient);
-		roomForm.RoomID = obj;
-	//	roomForm.thisRoom = netClient.roomList [obj];
-	    roomForm.Show();
-
-		//throw new NotImplementedException();
-	}
 
 	private void NetClient_onAuthenticateEvent(bool obj)
 	{

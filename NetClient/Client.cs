@@ -1,8 +1,8 @@
 ﻿using MessageServer.Data;
-using Newtonsoft.Json;
 using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text;
+using LibObjects;
 
 
 namespace NetClient
@@ -13,7 +13,7 @@ namespace NetClient
 		Uri serverUri = new Uri("ws://localhost:8080/");
 
 		private bool isClientValidated = false;
-		private int ClientID;
+		private Guid ClientID;
 		private String ClientName;
 		public List<User> networkUsers = new List<User>();
 		public List<Room> roomList = new List<Room>();
@@ -27,10 +27,10 @@ namespace NetClient
 		public event Action<string> onUserJoinedEvent;
 		public event Action<string> onUserLeftEvent;
 		public event Action<List<Room>> onRoomListRecievedEvent;
-		public event Action<int> onRoomCreatedEvent;
-		public event Action<string> onRoomJoinedEvent;
-		public event Action<(int RoomID, string Message)> onRoomMessageRecievedEvent;
-		public event Action<int> onIDRecievedEvent;
+		public event Action<Room> onRoomCreatedEvent;
+		public event Action<Room> onRoomJoinedEvent;
+		public event Action<(Room room, User user, string Message)> onRoomMessageRecievedEvent;
+		public event Action<Guid> onIDRecievedEvent;
 
 		public event Action<string> onIncomingWebSocketMessage;
 
@@ -108,7 +108,8 @@ namespace NetClient
 			string [] messageChunks = message.Split(':');
 
 			switch (messageChunks [0]) {
-				case "AUTH": // authorisation accepted by the server.
+				case "AUTH": //"AUTH:OK" / "AUTH:FAILED"
+					// authorisation accepted by the server.
 					if (messageChunks [1] == "OK") {
 						isClientValidated = true;
 						onAuthenticateEvent?.Invoke(true);
@@ -122,64 +123,55 @@ namespace NetClient
 					}
 					break;
 
-				case "IDIS":
-					ClientID = System.Int32.Parse(messageChunks [1]);
+				case "IDIS": //"IDIS:[USERID_GUID]"
+					ClientID = Guid.Parse(messageChunks [1]);
 					onIDRecievedEvent?.Invoke(ClientID);
 					break;
 
-				case "USERLIST":
-					int numberOfUsers = Int32.Parse(messageChunks [1]);
-					networkUsers.Clear();
-					for (int counter = 0; counter < numberOfUsers; counter++) {
-						networkUsers.Add(new User(messageChunks [3 + counter], true)  );
-					}
+				case "USERLIST": //"USERLIST:[USERS_JSON]"
+					networkUsers = GetUsersFromMessageFormatStringJsonUserList(message, messageChunks);
 					onUserListRecievedEvent?.Invoke(networkUsers);
 					break;
 
-				case "RECIEVEMESSAGE":
-					string jsonStrUser = message.Substring(messageChunks[0].Length + 1, message.Length - (messageChunks [^1].Length + messageChunks [0].Length + 2));
-					User user = JsonConvert.DeserializeObject<User>(jsonStrUser);
-					ReceiveMessage(user,messageChunks [^1]);
-					onMessageRecievedEvent?.Invoke((user, messageChunks [^1]));
+				case "RECIEVEMESSAGE": //"RECIEVEMESSAGE:[USER_JSON]:[MESSAGE_STRING]"
+					var messageString = GetUserMessageFromMessageFormatStringJsonRoomString(message, messageChunks, out var user);
+					ReceiveMessage(user,messageString);
+					onMessageRecievedEvent?.Invoke((user, messageString));
 					break;
 
-				//case "ROOMLIST":
-				//roomList.Clear();
-				//int numberOfRooms = Int32.Parse(MessageChunks [1]);
-				//for (int counter = 0; counter < numberOfRooms; counter++) {
-				//	roomList.Add(Guid.Parse(MessageChunks [2 + counter]));
-				//}
-				//onRoomListRecievedEvent?.Invoke(roomList);
-				//break;
-
-				case "ROOMLIST*JSON":
-					string jsonData = message.Substring(messageChunks [0].Length + 1);
-					roomList.Clear();
-					List<Room> JsonDe = JsonConvert.DeserializeObject<List<Room>>(jsonData);
+				case "ROOMLIST*JSON": //"ROOMLIST*JSON:[ROOMS_JSON]"
+					var JsonDe = GetRoomsListFromMessageFormatStringJsonRooms(message, messageChunks);
 					roomList = JsonDe;
-					onRoomListRecievedEvent?.Invoke(JsonDe);
+					onRoomListRecievedEvent?.Invoke(roomList);
 					break;
 
-				case "ROOMJOINED":
-					onRoomJoinedEvent?.Invoke(messageChunks [1]);
-					Console.WriteLine($"joined room {messageChunks [1]}");
+				case "ROOMJOINED": //"ROOMJOINED:[ROOM_JSON] 
+					Room roomFromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
+					onRoomJoinedEvent?.Invoke(roomFromJson);
+					Console.WriteLine($"joined room {roomFromJson.RoomID.ToString()}");
 					break;
 
-				case "ROOMCREATED":
-					onRoomCreatedEvent?.Invoke(Int32.Parse(messageChunks [1]));
-					Console.WriteLine($"room {messageChunks [1]} has been created");
+				case "ROOMCREATED": //"ROOMCREATED:[ROOM_JSON] 
+					Room fromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
+					onRoomCreatedEvent?.Invoke(fromJson);
+					Console.WriteLine($"room {fromJson.RoomID.ToString()} has been created");
 					break;
 
-				case "ROOMMSG":
-					onRoomMessageRecievedEvent?.Invoke((Int32.Parse(messageChunks [1]), messageChunks [2]));
+				case "ROOMMSG": //"ROOMMSG:[ROOMID_JSON]:[UserID_GUID]:[MESSAGE_STRING]"
+					Guid userID = Guid.Parse(messageChunks[^2]);
+					string roomMessageString = messageChunks[^1];
+					string jsonStrRoom = message.Substring(messageChunks[0].Length + 1, message.Length - (messageChunks [^2].Length + messageChunks [^1].Length + messageChunks [0].Length + 3));
+					Room room = Room.GetRoomFromJson(jsonStrRoom);
+					User userFromRoom = room.GetUserByGuid(userID);
+					onRoomMessageRecievedEvent?.Invoke((room, userFromRoom, roomMessageString));
 					break;
 
-				case "USERJOINED":
+				case "USERJOINED": //TODO: Needs work only used in call "ADDUSERTOROOM" Not implemented on client
 					onUserJoinedEvent?.Invoke(messageChunks [1]);
 					Console.WriteLine($"{messageChunks [1]} joined room");
 					break;
 				
-				case "USERLEFT":
+				case "USERLEFT": //TODO: Not implemented on server
 					onUserLeftEvent?.Invoke(messageChunks [1]);
 					Console.WriteLine($"{messageChunks [1]} left room");
 					break;
@@ -192,6 +184,37 @@ namespace NetClient
 
 			return true;
 
+		}
+
+		private List<Room> GetRoomsListFromMessageFormatStringJsonRooms(string message, string[] messageChunks)
+		{
+			string jsonData = message.Substring(messageChunks[0].Length + 1);
+			roomList.Clear();
+			List<Room> JsonDe = Room.GetRoomListFromJson(jsonData);
+			return JsonDe;
+		}
+
+		private static string GetUserMessageFromMessageFormatStringJsonRoomString(string message,
+			string[] messageChunks, out User user)
+		{
+			var messageString = messageChunks[^1];
+			string jsonStrUser = message.Substring(messageChunks[0].Length + 1,
+				message.Length - (messageString.Length + messageChunks[0].Length + 2));
+			user = User.GetUserFromJson(jsonStrUser);
+			return messageString;
+		}
+
+		public List<User> GetUsersFromMessageFormatStringJsonUserList(string message, string[] messageChunks)
+		{
+			string jsonStrUsers = message.Substring(messageChunks[0].Length + 1);
+			return User.GetUsersListFromJson(jsonStrUsers);
+		}
+
+		private static Room GetRoomFromMessageFormatStringRoom(string message, string[] messageChunks)
+		{
+			string jsonStrRoomCreated = message.Substring(messageChunks[0].Length + 1);
+			Room fromJson = Room.GetRoomFromJson(jsonStrRoomCreated);
+			return fromJson;
 		}
 
 		private void ReceiveMessage(User user, string Message)
@@ -214,7 +237,7 @@ namespace NetClient
 			await SendMessage(msg.ToString());
 		}
 
-		public async Task SendMessageToRoomAsync(int RoomID, String Message)
+		public async Task SendMessageToRoomAsync(Guid RoomID, String Message)
 		{
 			var msg = new StringBuilder();
 			msg.Append($"SENDMSGTOROOM:{RoomID}:{ClientID}:{Message}");
@@ -241,7 +264,7 @@ namespace NetClient
 		
 		public async void SendMessageToUser(User user, string Message)
 		{
-			var userJson = JsonConvert.SerializeObject(user, Newtonsoft.Json.Formatting.Indented);
+			var userJson = User.GetJsonFromUser(user);
 			string msg = $"SENDMESGTOUSER:{userJson}:{Message}";
 			await SendMessage(msg);
 		}

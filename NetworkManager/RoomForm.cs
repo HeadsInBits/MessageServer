@@ -8,13 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using LibObjects;
 
 namespace NetworkManager
 {
 	public partial class RoomForm : Form
 	{
 		public Room thisRoom;
-		public int RoomID;
+		public Guid RoomID;
 		public NetClient.Client myClient;
 
 		public RoomForm(Room room)
