@@ -171,17 +171,20 @@ public class WebSocketHandler
 		if (sockets [index] == null)
 			return false;
 
-		if (logginEnabled) {
-			Console.ForegroundColor = ConsoleColor.Blue;
-			Console.WriteLine(message);
-			Console.ResetColor();
-		}
+		
 
 		byte [] buffer = Encoding.UTF8.GetBytes(message);
 		// Create a WebSocket message from the buffer
 		var webSocketMessage = new ArraySegment<byte>(buffer);
+		sockets[index].SendAsync(webSocketMessage, WebSocketMessageType.Text, true, CancellationToken.None);
+		
+		if (logginEnabled) {
+			Console.ForegroundColor = ConsoleColor.Blue;
+			Console.WriteLine($"Sent To Client {index} {_userController.GetUserProfileFromSocketId(index)} Message: {message}");
+			Console.ResetColor();
+		}
 
-		sockets [index].SendAsync(webSocketMessage, WebSocketMessageType.Text, true, CancellationToken.None);
+		
 		return true;
 	}
 
@@ -194,9 +197,19 @@ public class WebSocketHandler
 			Authenticate(index, message);
 			break;
 
-			case "GETMYID": //TODO: Not implemented on client
-			SendMessage(index, "IDIS:" + index);
+			case "USERFROMGUID": //"USERFROMGUID:{guid.ToString()}"
+				User user = _userController.GetUserProfileFromSocketGuid(Guid.Parse(messageChunks[1]));
+			SendMessage(index, $"USERGUID:{User.GetJsonFromUser(user)}");
 			break;
+			
+			case "GETMYID": //TODO: Not implemented on client
+				SendMessage(index, "IDIS:" + index);
+				break;
+			
+			case "GETMYGUID": //"GETMYGUID"
+				User userGUID = _userController.GetUserProfileFromSocketId(index);
+				SendMessage(index, "YOURGUID:" + userGUID.GetUserGuid());
+				break;
 
 			case "GETUSERLIST": //"GETUSERLIST"
 			GetUserList(index);
@@ -221,20 +234,27 @@ public class WebSocketHandler
 			SendMessage(index, $"ROOMJOINED:{createdRoomJason}");
 			break;
 
-			case "ADDUSERTOROOM"://TODO: Not implemented on client
-			var userProfile = _userController.GetUserProfileFromUserName(messageChunks [1]);
-			_roomController.AddUserToRoom(userProfile, Guid.Parse(messageChunks [2]));
-			SendMessage(index, "USERJOINED:" + messageChunks [1]);
-			SendMessage(userProfile.WebSocketID, "ROOMJOINED:" + messageChunks [2]);
+			case "ADDUSERTOROOM"://"ADDUSERTOROOM:[ROOM_GUID]:[UserName]"
+			User userProfile = _userController.GetUserProfileFromUserName(messageChunks [^1]);
+			string jsonUser = User.GetJsonFromUser(userProfile);
+			Console.WriteLine(userProfile.WebSocketID);
+			Console.WriteLine(Guid.Parse(messageChunks[1]).ToString());
+			Console.WriteLine(User.GetJsonFromUser(userProfile));
+			
+			_roomController.AddUserToRoom(userProfile, Guid.Parse(messageChunks[1]));
+			
+			Console.WriteLine("still working");
+			SendMessage(index, "USERJOINED:" + jsonUser);
+			SendMessage(userProfile.WebSocketID, "ROOMJOINED:" + messageChunks [^1]);
 			break;
 			
-			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[UserID]:[MESSAGE]"
-				string jsonStrRoom = message.Substring(messageChunks[0].Length + 1, message.Length - (messageChunks [^1].Length + messageChunks [0].Length +  messageChunks [^2].Length  + 3));
-				int userID = Int32.Parse(messageChunks[^2]);
-				Room room = Room.GetRoomFromJson(jsonStrRoom);
+			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[MESSAGE]"
+				Guid guid = Guid.Parse(messageChunks[1]);
+				Room room = _roomController.GetRoomFromGUID(guid);
+				User userMessage = _userController.GetUserProfileFromSocketId(index);
 				foreach (var usr in _roomController.GetUsersInRoom(room.RoomID))
 				{
-					SendMessage(usr.WebSocketID, "ROOMMSG:" + messageChunks [1] + ":"+ messageChunks [2] +":"+ messageChunks[3]);
+					SendMessage(usr.WebSocketID, $"ROOMMSG:{Room.GetJsonFromRoom(room)}:{userMessage.GetUserGuid()}:{message[2]}");
 				}
 				break;
 
@@ -257,7 +277,7 @@ public class WebSocketHandler
 
 	private void Authenticate(int index, string message)
 	{
-		User? tmpUser = ValidateUser(message);
+		User? tmpUser = ValidateUser(message, index);
 		if (tmpUser != null)
 		{
 			tmpUser.WebSocketID = index;
@@ -289,7 +309,7 @@ public class WebSocketHandler
 	}
 
 
-	private User? ValidateUser(string message)
+	private User? ValidateUser(string message, int index)
 	{
 		
 		var messageChunks = message.Split(":");
@@ -297,7 +317,7 @@ public class WebSocketHandler
 			throw new Exception();
 
 		if (dbManager.ValidateAccount(messageChunks [1], messageChunks [2])) {
-			User? tmpUser = new User(messageChunks [1], true, Guid.NewGuid());
+			User? tmpUser = new User(messageChunks [1], true, Guid.NewGuid(), index);
 			return tmpUser;
 		}
 

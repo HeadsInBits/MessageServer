@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using MessageServer.Data;
 using Newtonsoft.Json;
 
@@ -16,13 +18,13 @@ namespace LibObjects
 		}
 		public Guid RoomID = Guid.NewGuid();
 		public List<User> usersInRoom = new List<User>();
-		public List<User> bannedList;
+		public List<User> bannedList = new List<User>();
 		public string RoomName;
-		public bool isRoomLocked;
+		public bool isRoomLocked = false;
 		public string roomKey = string.Empty;
 		public DateTime roomCreation = DateTime.Now;
 		public User creator;
-		public int _roomLimit;
+		public int _roomLimit = 0;
 		public bool _isPublic;
 		public string Meta = "";
 
@@ -56,14 +58,27 @@ namespace LibObjects
 
 		public RoomStatusCodes AddUserToRoom(User usrToAdd)
 		{
+			Console.WriteLine("AddUserToRoom");
+			var ls = new StringBuilder();
+				usersInRoom.ForEach(a => ls.Append(a._userName));
+			Console.WriteLine(ls.ToString());
+			Console.WriteLine(isRoomLocked);
+			
 			if (isRoomLocked || _roomLimit <= usersInRoom.Count)
+			{
+				Console.WriteLine("room locked");
 				return RoomStatusCodes.ROOMLOCKED;
+			}
+			Console.WriteLine("Room Not Locked");
 
 			if (!bannedList.Contains(usrToAdd)) {
+				Console.WriteLine("user added");
+				Console.WriteLine(usrToAdd.WebSocketID);
 				usersInRoom.Add(usrToAdd);
 				return RoomStatusCodes.OK;
 			}
 			else {
+				Console.WriteLine("user banned");
 				return RoomStatusCodes.BANNED;
 			}
 		}
@@ -111,12 +126,12 @@ namespace LibObjects
 		{
 			foreach (User user in usersInRoom)
 			{
-				if (user.GetUserID() == userId)
+				if (user.GetUserGuid() == userId)
 				{
 					return user;
 				}
 			}
-			return new User("N/A", false, Guid.Empty);
+			return new User("N/A", false, Guid.Empty, -1);
 		}
 	}
 }

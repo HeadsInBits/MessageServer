@@ -59,11 +59,38 @@ public class RoomController
 
 	public Room.RoomStatusCodes AddUserToRoom(User userToAdd, Guid roomNumber)
 	{
-		return RoomDictionary [roomNumber].AddUserToRoom(userToAdd);
+		if (RoomDictionary.ContainsKey(roomNumber))
+		{
+			Console.WriteLine($"User {userToAdd.GetUserName()} added to room {roomNumber}");
+			Room room = RoomDictionary [roomNumber];
+			Console.WriteLine("found room");
+			Console.WriteLine($"users list before {room.usersInRoom.ToString()}");
+			var addUserToRoom = room.AddUserToRoom(userToAdd);
+			Console.WriteLine($"users list status {addUserToRoom.ToString()}");
+			Console.WriteLine($"users list before {room.usersInRoom.ToString()}");
+			return addUserToRoom;
+			
+		}
+		else
+		{
+			throw new Exception($"Room {roomNumber} doent exist");
+		}
 	}
 
 	public void DestroyRoom(Guid index)
 	{
 		RoomDictionary.Remove(index);
+	}
+
+	public Room GetRoomFromGUID(Guid guid)
+	{
+		if (RoomDictionary.ContainsKey(guid))
+		{
+			return RoomDictionary[guid];
+		}
+		else
+		{
+			throw new Exception("room doesnt exist");
+		}
 	}
 }

@@ -10,10 +10,13 @@ namespace MessageServer.Data
 		public string _userName;
 		public bool _isValidated;
 		public int WebSocketID;
-		public Guid id;
+		public Guid Guid;
 
-		public User(string userName, bool isValidated, Guid id)
+		public User(string userName, bool isValidated, Guid id, int webSocketId)
 		{
+			Guid = id;
+			WebSocketID = webSocketId;
+			_isValidated = isValidated;
 			_userName = userName;
 		}
 
@@ -60,9 +63,14 @@ namespace MessageServer.Data
 			return JsonConvert.SerializeObject(users, Formatting.Indented);
 		}
 
-		public Guid GetUserID()
+		public Guid GetUserGuid()
 		{
-			throw new NotImplementedException();
+			return Guid;
+		}
+		
+		public int GetWebSocketID()
+		{
+			return WebSocketID;
 		}
 	}
 }

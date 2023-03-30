@@ -17,6 +17,16 @@ public class UserController
 
 		return null;
 	}
+	
+	public User? GetUserProfileFromSocketGuid(Guid guid)
+	{
+		foreach (var usr in connectedClients) {
+			if (usr.GetUserGuid() == guid) {
+				return usr;
+			}
+		}
+		return null;
+	}
 
 	public User? GetUserProfileFromUserName(string username)
 	{
@@ -27,5 +37,16 @@ public class UserController
 		}
 
 		return null;
+	}
+
+	public Guid GetGuidFromSocketId(int index)
+	{
+		foreach (var usr in connectedClients) {
+			if (usr.WebSocketID == index) {
+				return usr.GetUserGuid();
+			}
+		}
+
+		return Guid.Empty;
 	}
 }

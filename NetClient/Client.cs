@@ -31,6 +31,8 @@ namespace NetClient
 		public event Action<Room> onRoomJoinedEvent;
 		public event Action<(Room room, User user, string Message)> onRoomMessageRecievedEvent;
 		public event Action<Guid> onIDRecievedEvent;
+		public event Action<(User user, Guid guid)> onRecievedUserWithGuid;
+		public event Action<string> onMessageSentToSocket;
 
 		public event Action<string> onIncomingWebSocketMessage;
 
@@ -113,6 +115,7 @@ namespace NetClient
 					if (messageChunks [1] == "OK") {
 						isClientValidated = true;
 						onAuthenticateEvent?.Invoke(true);
+						Task.FromResult(RequestMyClientID());
 						break;
 					}
 					else {
@@ -123,7 +126,7 @@ namespace NetClient
 					}
 					break;
 
-				case "IDIS": //"IDIS:[USERID_GUID]"
+				case "YOURGUID": //"IDIS:[USERID_GUID]"
 					ClientID = Guid.Parse(messageChunks [1]);
 					onIDRecievedEvent?.Invoke(ClientID);
 					break;
@@ -175,6 +178,13 @@ namespace NetClient
 					onUserLeftEvent?.Invoke(messageChunks [1]);
 					Console.WriteLine($"{messageChunks [1]} left room");
 					break;
+				
+				case "USERGUID": //"USERGUID:[User_Json]"
+					
+					User guidUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + 1));
+					Guid guid = guidUser.GetUserGuid();
+					onRecievedUserWithGuid?.Invoke((guidUser, guid));
+					break;
 
 				default:
 					throw new NotSupportedException();
@@ -184,6 +194,17 @@ namespace NetClient
 
 			return true;
 
+		}
+
+		public async Task RequestMyClientID()
+		{
+			
+			await SendMessage("GETMYGUID");
+		}
+
+		public async Task RequestUserFromGuid(Guid guid)
+		{
+			await SendMessage($"USERFROMGUID:{guid.ToString()}");
 		}
 
 		private List<Room> GetRoomsListFromMessageFormatStringJsonRooms(string message, string[] messageChunks)
@@ -222,11 +243,17 @@ namespace NetClient
 			//already called this
 			//onMessageRecievedEvent?.Invoke((user, Message));
 		}
+		
+		public async void RequestToAddUserToRoom(User user, Guid roomID)
+		{
+			await SendMessage($"ADDUSERTOROOM:{roomID}:{user.GetUserName()}");
+		}
 
 		private async Task SendMessage(string message)
 		{
 			ArraySegment<byte> buffer = new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(message));
 			await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+			onMessageSentToSocket?.Invoke(message);
 
 		}
 
@@ -240,7 +267,7 @@ namespace NetClient
 		public async Task SendMessageToRoomAsync(Guid RoomID, String Message)
 		{
 			var msg = new StringBuilder();
-			msg.Append($"SENDMSGTOROOM:{RoomID}:{ClientID}:{Message}");
+			msg.Append($"SENDMSGTOROOM:{RoomID}:{Message}");
 			await SendMessage(msg.ToString());
 		}
 
