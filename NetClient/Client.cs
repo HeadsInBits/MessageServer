@@ -151,23 +151,23 @@ namespace NetClient
 					break;
 				
 				case "ROOMLISTPAGIJSON": //"ROOMLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[ROOMS_JSON]"
-					RecievedPagionatedRoomJsonDataMessage(message, messageChunks);
+					ReceivedPaginatedRoomJsonDataMessage(message, messageChunks);
 					break;
 				
 				case "USERLISTPAGIJSON": //"USERLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]"
-					RecievedPagionatedUserJsonDataMessage(message, messageChunks);
+					ReceivedPaginatedUserJsonDataMessage(message, messageChunks);
 					break;
 
 				case "ROOMJOINED": //"ROOMJOINED:[ROOM_JSON] 
 					Room roomFromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
 					onRoomJoinedEvent?.Invoke(roomFromJson);
-					Console.WriteLine($"joined room {roomFromJson.RoomId.ToString()}");
+					Console.WriteLine($"joined room {roomFromJson.GetGuid().ToString()}");
 					break;
 
 				case "ROOMCREATED": //"ROOMCREATED:[ROOM_JSON] 
 					Room fromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
 					onRoomCreatedEvent?.Invoke(fromJson);
-					Console.WriteLine($"room {fromJson.RoomId.ToString()} has been created");
+					Console.WriteLine($"room {fromJson.GetGuid().ToString()} has been created");
 					break;
 
 				case "ROOMMSG": //"ROOMMSG:[ROOMID_JSON]:[UserID_GUID]:[MESSAGE_STRING]"
@@ -206,7 +206,7 @@ namespace NetClient
 
 		}
 
-		private void RecievedPagionatedUserJsonDataMessage(string message, string[] messageChunks)
+		private void ReceivedPaginatedUserJsonDataMessage(string message, string[] messageChunks)
 		{
 			handlingUserPationation = true;
 			
@@ -224,7 +224,7 @@ namespace NetClient
 			}
 		}
 
-		private void RecievedPagionatedRoomJsonDataMessage(string message, string[] messageChunks)
+		private void ReceivedPaginatedRoomJsonDataMessage(string message, string[] messageChunks)
 		{
 			handlingRoomsPationation = true;
 			int page = Int32.Parse(messageChunks[1]);

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using MessageServer.Data;
 using Newtonsoft.Json;
@@ -11,75 +10,76 @@ namespace LibObjects
 	{
 		class RoomJsonData
 		{
-			public Guid RoomID;
-			public List<User> usersInRoom;
-			public List<User> bannedList;
+			public Guid RoomId;
+			public List<User> UsersInRoom;
+			public List<User> BannedList;
 			public string RoomName;
-			public bool isRoomLocked;
-			public string roomKey;
-			public DateTime roomCreation;
-			public User creator;
-			public int _roomLimit;
-			public bool _isPublic;
+			public bool IsRoomLocked;
+			public string RoomKey;
+			public DateTime RoomCreation;
+			public User Creator;
+			public int RoomLimit;
+			public bool IsPublic;
 			public string Meta;
 		}
 
 		private RoomJsonData GetJsonDataFromRoom()
 		{
-			RoomJsonData json = new RoomJsonData();
-			json.RoomID = RoomId;
-			json.usersInRoom = usersInRoom;
-			json.bannedList = bannedList;
-			json.RoomName = RoomName;
-			json.isRoomLocked = isRoomLocked;
-			json.roomKey = roomKey;
-			json.roomCreation = roomCreation;
-			json.creator = creator;
-			json._roomLimit = _roomLimit;
-			json._isPublic = _isPublic;
-			json.Meta = Meta;
+			RoomJsonData json = new RoomJsonData
+			{
+				RoomId = _roomId,
+				UsersInRoom = UsersInRoom,
+				BannedList = _bannedList,
+				RoomName = _roomName,
+				IsRoomLocked = _isRoomLocked,
+				RoomKey = _roomKey,
+				RoomCreation = _roomCreation,
+				Creator = _creator,
+				RoomLimit = _roomLimit,
+				IsPublic = _isPublic,
+				Meta = _meta
+			};
 			return json;
 		}
 		
 		private Room(RoomJsonData json)
 		{
-			RoomId = json.RoomID;
-			usersInRoom = json.usersInRoom;
-			bannedList = json.bannedList;
-			RoomName = json.RoomName;
-			isRoomLocked = json.isRoomLocked;
-			roomKey = json.roomKey;
-			roomCreation = json.roomCreation;
-			creator = json.creator;
-			_roomLimit = json._roomLimit;
-			_isPublic = json._isPublic;
-			Meta = json.Meta;
+			_roomId = json.RoomId;
+			UsersInRoom = json.UsersInRoom;
+			_bannedList = json.BannedList;
+			_roomName = json.RoomName;
+			_isRoomLocked = json.IsRoomLocked;
+			_roomKey = json.RoomKey;
+			_roomCreation = json.RoomCreation;
+			_creator = json.Creator;
+			_roomLimit = json.RoomLimit;
+			_isPublic = json.IsPublic;
+			_meta = json.Meta;
 		}
 		
 		public enum RoomStatusCodes
 		{
-			OK,
-			BANNED,
-			ROOMLOCKED,
-			PASSWORDFAILED
+			Ok,
+			Banned,
+			RoomLocked
 		}
-		
-		public readonly Guid RoomId = Guid.NewGuid();
-		public List<User> usersInRoom = new List<User>();
-		public List<User> bannedList = new List<User>();
-		public string RoomName;
-		public bool isRoomLocked = false;
-		public string roomKey = string.Empty;
-		public DateTime roomCreation = DateTime.Now;
-		public User creator;
-		public int _roomLimit = 0;
-		public bool _isPublic;
-		public string Meta = "";
-		public static int NumberOfRoomsToSendInMessage = 20;
+
+		private readonly Guid _roomId = Guid.NewGuid();
+		private List<User> UsersInRoom = new List<User>();
+		private readonly List<User> _bannedList = new List<User>();
+		private readonly string _roomName;
+		private readonly bool _isRoomLocked;
+		private readonly string _roomKey = string.Empty;
+		private readonly DateTime _roomCreation = DateTime.Now;
+		private readonly User _creator;
+		private readonly int _roomLimit;
+		private readonly bool _isPublic;
+		private readonly string _meta;
+		public const int NumberOfRoomsToSendInMessage = 20;
 
 		public sealed override int GetHashCode()
 		{
-			return RoomId.GetHashCode();
+			return _roomId.GetHashCode();
 		}
 		
 		public static bool operator ==(Room lhs, Room rhs)
@@ -134,11 +134,11 @@ namespace LibObjects
 
 		public Room(User creator, int roomLimit, bool isPublic, string meta)
 		{
-			this.creator = creator;
+			_creator = creator;
 			_roomLimit = roomLimit;
 			_isPublic = isPublic;
-			usersInRoom.Add(creator);
-			Meta = meta;
+			UsersInRoom.Add(creator);
+			_meta = meta;
 			RoomJsonData j = GetJsonDataFromRoom();
 			Room room = new Room(j);
 			Console.WriteLine($"{GetGuid()} == {room.GetGuid()}");
@@ -149,57 +149,57 @@ namespace LibObjects
 
 		public List<User> GetUsersInRoom()
 		{
-			return usersInRoom;
+			return UsersInRoom;
 
 		}
 
 		public string GetRoomName()
 		{
-			return RoomName;
+			return _roomName;
 		}
 
 		public Guid GetGuid()
 		{
-			return RoomId;
+			return _roomId;
 		}
 
 		public RoomStatusCodes AddUserToRoom(User usrToAdd)
 		{
 			Console.WriteLine("AddUserToRoom");
 			var ls = new StringBuilder();
-				usersInRoom.ForEach(a => ls.Append(a._userName));
+				UsersInRoom.ForEach(a => ls.Append(a._userName));
 			Console.WriteLine(ls.ToString());
-			Console.WriteLine(isRoomLocked);
+			Console.WriteLine(_isRoomLocked);
 			
-			if (isRoomLocked || _roomLimit <= usersInRoom.Count)
+			if (_isRoomLocked || _roomLimit <= UsersInRoom.Count)
 			{
 				Console.WriteLine("room locked");
-				return RoomStatusCodes.ROOMLOCKED;
+				return RoomStatusCodes.RoomLocked;
 			}
 			Console.WriteLine("Room Not Locked");
 
-			if (!bannedList.Contains(usrToAdd)) {
+			if (!_bannedList.Contains(usrToAdd)) {
 				Console.WriteLine("user added");
 				Console.WriteLine(usrToAdd.WebSocketID);
-				usersInRoom.Add(usrToAdd);
-				return RoomStatusCodes.OK;
+				UsersInRoom.Add(usrToAdd);
+				return RoomStatusCodes.Ok;
 			}
 			else {
 				Console.WriteLine("user banned");
-				return RoomStatusCodes.BANNED;
+				return RoomStatusCodes.Banned;
 			}
 		}
 
 		public RoomStatusCodes RemoveUserFromRoom(User usrToRemove)
 		{
-			usersInRoom.Remove(usrToRemove);
-			return RoomStatusCodes.OK;
+			UsersInRoom.Remove(usrToRemove);
+			return RoomStatusCodes.Ok;
 		}
 
 		public RoomStatusCodes BanUserFromRoom(User usrToBan)
 		{
-			bannedList.Add(usrToBan);
-			return RoomStatusCodes.OK;
+			_bannedList.Add(usrToBan);
+			return RoomStatusCodes.Ok;
 		}
 		
 		//TODO: NOW SERIALISATION AND DESERIALIZATION IS HAPPENING HERE WE COULD:
@@ -211,17 +211,28 @@ namespace LibObjects
 
 		public static List<Room> GetRoomListFromJson(string jsonData)
 		{
-			return JsonConvert.DeserializeObject<List<Room>>(jsonData);
+			List<RoomJsonData> roomJsonDataList = JsonConvert.DeserializeObject<List<RoomJsonData>>(jsonData);
+			List<Room> rooms = new List<Room>();
+			foreach (var data in roomJsonDataList)
+			{
+				rooms.Add(new Room(data));
+			}
+			return rooms;
 		}
 		
 		public static string GetJsonFromRoomList(List<Room> rooms)
 		{
-			return JsonConvert.SerializeObject(rooms, Formatting.Indented);
+			List<RoomJsonData> roomJsonDataList = new List<RoomJsonData>();
+			foreach (var room in rooms)
+			{
+				roomJsonDataList.Add(room.GetJsonDataFromRoom());
+			}
+			return JsonConvert.SerializeObject(roomJsonDataList, Formatting.Indented);
 		}
 		
-		public static Room GetRoomFromJson(string JsonString)
+		public static Room GetRoomFromJson(string jsonString)
 		{
-			return new Room(JsonConvert.DeserializeObject<RoomJsonData>(JsonString));
+			return new Room(JsonConvert.DeserializeObject<RoomJsonData>(jsonString));
 		}
 		
 		public static string GetJsonFromRoom(Room room)
@@ -231,7 +242,7 @@ namespace LibObjects
 
 		public User GetUserByGuid(Guid userId)
 		{
-			foreach (User user in usersInRoom)
+			foreach (User user in UsersInRoom)
 			{
 				if (user.GetUserGuid() == userId)
 				{

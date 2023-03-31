@@ -68,11 +68,7 @@ public class RoomController
 		{
 			Console.WriteLine($"User {userToAdd.GetUserName()} added to room {roomNumber}");
 			Room room = RoomDictionary [roomNumber];
-			Console.WriteLine("found room");
-			Console.WriteLine($"users list before {room.usersInRoom.ToString()}");
 			var addUserToRoom = room.AddUserToRoom(userToAdd);
-			Console.WriteLine($"users list status {addUserToRoom.ToString()}");
-			Console.WriteLine($"users list before {room.usersInRoom.ToString()}");
 			return addUserToRoom;
 			
 		}

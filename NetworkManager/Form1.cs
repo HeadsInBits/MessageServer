@@ -48,17 +48,17 @@ public partial class Form1 : Form
 	private void Form1_Load(object sender, EventArgs e)
 	{
 		netClient.onAuthenticateEvent += NetClient_onAuthenticateEvent;
-		netClient.onMessageRecievedEvent += NetClient_onMessageRecievedEvent;
+		netClient.onMessageRecievedEvent += NetClient_onMessageReceivedEvent;
 		netClient.onRoomCreatedEvent += NetClient_onRoomCreatedEvent;
 		netClient.onRoomJoinedEvent += NetClient_onRoomJoinedEvent;
-		netClient.onRoomListRecievedEvent += NetClient_onRoomListRecievedEvent;
-		netClient.onUserListRecievedEvent += NetClient_onUserListRecievedEvent;
+		netClient.onRoomListRecievedEvent += NetClient_onRoomListReceivedEvent;
+		netClient.onUserListRecievedEvent += NetClient_onUserListReceivedEvent;
 		netClient.onRoomMessageRecievedEvent += NetClient_onRoomMessageRecievedEvent;
 	}
 
 	private void NetClient_onRoomMessageRecievedEvent((Room room, User user, string Message) obj)
 	{
-		MessageBox.Show($"Got Message from Room{obj.room.RoomId} :- {obj.Message}");
+		MessageBox.Show($"Got Message from Room{obj.room.GetGuid()} :- {obj.Message}");
 	}
 
 	private void NetClient_onRoomJoinedEvent(Room obj)
@@ -78,12 +78,12 @@ public partial class Form1 : Form
 		//throw new NotImplementedException();
 	}
 
-	private void NetClient_onMessageRecievedEvent((User user, string message) obj)
+	private void NetClient_onMessageReceivedEvent((User user, string message) obj)
 	{
 		MessageBox.Show($"Message Recieved: {obj.message}", obj.user.GetUserName());
 	}
 
-	private void NetClient_onUserListRecievedEvent(List<User> obj)
+	private void NetClient_onUserListReceivedEvent(List<User> obj)
 	{
 		UserList.Items.Clear();
 
@@ -92,11 +92,11 @@ public partial class Form1 : Form
 		}
 	}
 
-	private void NetClient_onRoomListRecievedEvent(List<Room> obj)
+	private void NetClient_onRoomListReceivedEvent(List<Room> obj)
 	{
 		RoomList.Items.Clear();
 		foreach (var room in netClient.GetLocalClientRoomList()) {
-			RoomList.Items.Add(room.RoomId);
+			RoomList.Items.Add(room.GetGuid());
 		}
 	}
 

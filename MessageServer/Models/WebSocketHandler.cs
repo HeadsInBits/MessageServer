@@ -335,7 +335,7 @@ public class WebSocketHandler
 				Room room = _roomController.GetRoomFromGUID(guid);
 				User userMessage = _userController.GetUserProfileFromSocketId(index);
 				Console.WriteLine();
-				foreach (var usr in _roomController.GetUsersInRoom(room.RoomId))
+				foreach (var usr in _roomController.GetUsersInRoom(room.GetGuid()))
 				{
 					SendMessage(usr.WebSocketID, $"ROOMMSG:{Room.GetJsonFromRoom(room)}:{userMessage.GetUserGuid()}:{messageChunks[2]}");
 				}
@@ -375,10 +375,6 @@ public class WebSocketHandler
 
 			if (Unique)
 			{
-				for (int i = 0; i < 61; i++)
-				{
-					_userController.connectedClients.Add(tmpUser);
-				}
 				_userController.connectedClients.Add(tmpUser);
 				Console.WriteLine("Added User to Client list:" + tmpUser.WebSocketID + "User:" + tmpUser.GetUserName());
 			}
