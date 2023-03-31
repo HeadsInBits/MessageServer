@@ -37,8 +37,6 @@ public partial class Form1 : Form
 
 	private void RefreshRoomsButton_Click(object sender, EventArgs e)
 	{
-
-		
 		netClient.RequestRoomList();
 	}
 
@@ -60,7 +58,7 @@ public partial class Form1 : Form
 
 	private void NetClient_onRoomMessageRecievedEvent((Room room, User user, string Message) obj)
 	{
-		MessageBox.Show($"Got Message from Room{obj.room.RoomID} :- {obj.Message}");
+		MessageBox.Show($"Got Message from Room{obj.room.RoomId} :- {obj.Message}");
 	}
 
 	private void NetClient_onRoomJoinedEvent(Room obj)
@@ -70,7 +68,7 @@ public partial class Form1 : Form
 
 	private async void NetClient_onRoomCreatedEvent(Room obj)
 	{
-		await netClient.RequestRoomList();
+		netClient.RequestRoomList();
 
 		RoomForm roomForm = new RoomForm(netClient);
 		roomForm.RoomID = obj.GetGuid();
@@ -98,7 +96,7 @@ public partial class Form1 : Form
 	{
 		RoomList.Items.Clear();
 		foreach (var room in netClient.GetLocalClientRoomList()) {
-			RoomList.Items.Add(room.RoomID);
+			RoomList.Items.Add(room.RoomId);
 		}
 	}
 

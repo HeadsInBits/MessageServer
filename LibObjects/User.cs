@@ -20,6 +20,8 @@ namespace MessageServer.Data
 			_userName = userName;
 		}
 
+		public static readonly int NumberOfUsersToSendInMessage = 20;
+
 		public string GetUserName()
 		{
 			return _userName;

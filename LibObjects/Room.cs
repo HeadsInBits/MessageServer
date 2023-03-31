@@ -9,6 +9,53 @@ namespace LibObjects
 {
 	public class Room
 	{
+		class RoomJsonData
+		{
+			public Guid RoomID;
+			public List<User> usersInRoom;
+			public List<User> bannedList;
+			public string RoomName;
+			public bool isRoomLocked;
+			public string roomKey;
+			public DateTime roomCreation;
+			public User creator;
+			public int _roomLimit;
+			public bool _isPublic;
+			public string Meta;
+		}
+
+		private RoomJsonData GetJsonDataFromRoom()
+		{
+			RoomJsonData json = new RoomJsonData();
+			json.RoomID = RoomId;
+			json.usersInRoom = usersInRoom;
+			json.bannedList = bannedList;
+			json.RoomName = RoomName;
+			json.isRoomLocked = isRoomLocked;
+			json.roomKey = roomKey;
+			json.roomCreation = roomCreation;
+			json.creator = creator;
+			json._roomLimit = _roomLimit;
+			json._isPublic = _isPublic;
+			json.Meta = Meta;
+			return json;
+		}
+		
+		private Room(RoomJsonData json)
+		{
+			RoomId = json.RoomID;
+			usersInRoom = json.usersInRoom;
+			bannedList = json.bannedList;
+			RoomName = json.RoomName;
+			isRoomLocked = json.isRoomLocked;
+			roomKey = json.roomKey;
+			roomCreation = json.roomCreation;
+			creator = json.creator;
+			_roomLimit = json._roomLimit;
+			_isPublic = json._isPublic;
+			Meta = json.Meta;
+		}
+		
 		public enum RoomStatusCodes
 		{
 			OK,
@@ -16,7 +63,8 @@ namespace LibObjects
 			ROOMLOCKED,
 			PASSWORDFAILED
 		}
-		public Guid RoomID = Guid.NewGuid();
+		
+		public readonly Guid RoomId = Guid.NewGuid();
 		public List<User> usersInRoom = new List<User>();
 		public List<User> bannedList = new List<User>();
 		public string RoomName;
@@ -27,7 +75,61 @@ namespace LibObjects
 		public int _roomLimit = 0;
 		public bool _isPublic;
 		public string Meta = "";
+		public static int NumberOfRoomsToSendInMessage = 20;
 
+		public sealed override int GetHashCode()
+		{
+			return RoomId.GetHashCode();
+		}
+		
+		public static bool operator ==(Room lhs, Room rhs)
+		{
+			if (lhs is null)
+			{
+				if (rhs is null)
+				{
+					// null == null = true.
+					return true;
+				}
+
+				// Only the left side is null.
+				return false;
+			}
+			// Equals handles the case of null on right side.
+			return lhs.Equals(rhs);
+		}
+
+		public static bool operator !=(Room lhs, Room rhs)
+		{
+			return !(lhs == rhs);
+		}
+		
+		public override bool Equals(object obj) => this.Equals(obj as Room);
+
+		public bool Equals(Room p)
+		{
+			if (p is null)
+			{
+				return false;
+			}
+
+			// Optimization for a common success case.
+			if (Object.ReferenceEquals(this, p))
+			{
+				return true;
+			}
+
+			// If run-time types are not exactly the same, return false.
+			if (this.GetType() != p.GetType())
+			{
+				return false;
+			}
+
+			// Return true if the fields match.
+			// Note that the base class is not invoked because it is
+			// System.Object, which defines Equals as reference equality.
+			return p.GetGuid() == GetGuid();
+		}
 
 
 		public Room(User creator, int roomLimit, bool isPublic, string meta)
@@ -37,6 +139,11 @@ namespace LibObjects
 			_isPublic = isPublic;
 			usersInRoom.Add(creator);
 			Meta = meta;
+			RoomJsonData j = GetJsonDataFromRoom();
+			Room room = new Room(j);
+			Console.WriteLine($"{GetGuid()} == {room.GetGuid()}");
+			Console.WriteLine($"{this.GetHashCode().ToString()} == {room.GetHashCode().ToString()}");
+			Console.WriteLine(this == room);
 		}
 
 
@@ -53,7 +160,7 @@ namespace LibObjects
 
 		public Guid GetGuid()
 		{
-			return RoomID;
+			return RoomId;
 		}
 
 		public RoomStatusCodes AddUserToRoom(User usrToAdd)
@@ -114,12 +221,12 @@ namespace LibObjects
 		
 		public static Room GetRoomFromJson(string JsonString)
 		{
-			return JsonConvert.DeserializeObject<Room>(JsonString);
+			return new Room(JsonConvert.DeserializeObject<RoomJsonData>(JsonString));
 		}
 		
 		public static string GetJsonFromRoom(Room room)
 		{
-			return JsonConvert.SerializeObject(room, Formatting.Indented);
+			return JsonConvert.SerializeObject(room.GetJsonDataFromRoom(), Formatting.Indented);
 		}
 
 		public User GetUserByGuid(Guid userId)

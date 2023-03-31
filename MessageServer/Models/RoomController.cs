@@ -38,24 +38,29 @@ public class RoomController
 		return roomList;
 	}
 
-	public Dictionary<Guid, Room> GetRoomList()
+	public Dictionary<Guid, Room> GetRoomDictionary()
 	{
 		return RoomDictionary;
 	}
 
 	public string JSONGetRoomList()
 	{
+		var rooms = GetRoomsList();
+		string output = Room.GetJsonFromRoomList(rooms);
+		return output;
+	}
+
+	public List<Room> GetRoomsList()
+	{
 		List<Room> rooms = new List<Room>();
 		foreach (var pair in RoomDictionary)
 		{
 			rooms.Add(pair.Value);
 		}
-		string output = Room.GetJsonFromRoomList(rooms);
-	//	Console.WriteLine(output);
-		return output;
+
+		return rooms;
 	}
 
-	
 
 	public Room.RoomStatusCodes AddUserToRoom(User userToAdd, Guid roomNumber)
 	{

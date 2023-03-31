@@ -17,6 +17,8 @@ namespace NetClient
 		private String ClientName;
 		public List<User> networkUsers = new List<User>();
 		public List<Room> roomList = new List<Room>();
+		private List<Room> tmRoomsList = new List<Room>();
+		private List<User> tmUsersList = new List<User>();
 		public List<Room> subscribedRooms = new List<Room>();
 		
 
@@ -33,10 +35,10 @@ namespace NetClient
 		public event Action<Guid> onIDRecievedEvent;
 		public event Action<(User user, Guid guid)> onRecievedUserWithGuid;
 		public event Action<string> onMessageSentToSocket;
-
 		public event Action<string> onIncomingWebSocketMessage;
-
 		private bool DisconnectOnFailAuthentication = false;
+		private bool handlingUserPationation = false;
+		private bool handlingRoomsPationation = false;
 
 		~Client()
 		{
@@ -65,7 +67,7 @@ namespace NetClient
 
 		public async Task Listen()
 		{
-			byte[] receiveBuffer = new byte [16384];
+			byte[] receiveBuffer = new byte [32768];
 			ArraySegment<byte> receiveSegment = new ArraySegment<byte>(receiveBuffer);
 			while (webSocket.State == WebSocketState.Open)
 			{
@@ -147,17 +149,25 @@ namespace NetClient
 					roomList = JsonDe;
 					onRoomListRecievedEvent?.Invoke(roomList);
 					break;
+				
+				case "ROOMLISTPAGIJSON": //"ROOMLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[ROOMS_JSON]"
+					RecievedPagionatedRoomJsonDataMessage(message, messageChunks);
+					break;
+				
+				case "USERLISTPAGIJSON": //"USERLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]"
+					RecievedPagionatedUserJsonDataMessage(message, messageChunks);
+					break;
 
 				case "ROOMJOINED": //"ROOMJOINED:[ROOM_JSON] 
 					Room roomFromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
 					onRoomJoinedEvent?.Invoke(roomFromJson);
-					Console.WriteLine($"joined room {roomFromJson.RoomID.ToString()}");
+					Console.WriteLine($"joined room {roomFromJson.RoomId.ToString()}");
 					break;
 
 				case "ROOMCREATED": //"ROOMCREATED:[ROOM_JSON] 
 					Room fromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
 					onRoomCreatedEvent?.Invoke(fromJson);
-					Console.WriteLine($"room {fromJson.RoomID.ToString()} has been created");
+					Console.WriteLine($"room {fromJson.RoomId.ToString()} has been created");
 					break;
 
 				case "ROOMMSG": //"ROOMMSG:[ROOMID_JSON]:[UserID_GUID]:[MESSAGE_STRING]"
@@ -194,6 +204,41 @@ namespace NetClient
 
 			return true;
 
+		}
+
+		private void RecievedPagionatedUserJsonDataMessage(string message, string[] messageChunks)
+		{
+			handlingUserPationation = true;
+			
+			int userPage = Int32.Parse(messageChunks[1]);
+			string urJson = message.Substring(messageChunks[0].Length + messageChunks[1].Length +
+			                                  messageChunks[2].Length + 3);
+			List<User> tmUsers = User.GetUsersListFromJson(urJson);
+			tmUsersList.AddRange(tmUsers);
+			if (userPage == 0)
+			{
+				networkUsers = tmUsersList;
+				tmUsersList = new List<User>();
+				onUserListRecievedEvent?.Invoke(networkUsers);
+				handlingUserPationation = false;
+			}
+		}
+
+		private void RecievedPagionatedRoomJsonDataMessage(string message, string[] messageChunks)
+		{
+			handlingRoomsPationation = true;
+			int page = Int32.Parse(messageChunks[1]);
+			string rmJson = message.Substring(messageChunks[0].Length + messageChunks[1].Length +
+			                                  messageChunks[2].Length + 3);
+			List<Room> tmRooms = Room.GetRoomListFromJson(rmJson);
+			tmRoomsList.AddRange(tmRooms);
+			if (page == 0)
+			{
+				roomList = tmRoomsList;
+				tmRoomsList = new List<Room>();
+				onRoomListRecievedEvent?.Invoke(roomList);
+				handlingRoomsPationation = false;
+			}
 		}
 
 		public async Task RequestMyClientID()
@@ -271,16 +316,26 @@ namespace NetClient
 			await SendMessage(msg.ToString());
 		}
 
-		public async Task UpdateUserList()
+		public bool UpdateUserList()
 		{
-			await SendMessage("GETUSERLIST");
+			if (handlingUserPationation)
+			{
+				return false;
+			}
+			Task.FromResult(SendMessage("GETUSERLIST"));
+			return true;
 		}
 
-		public async Task RequestRoomList()
+		public bool RequestRoomList()
 		{
+			if (handlingRoomsPationation)
+			{
+				return false;
+			}
 			var msg = new StringBuilder();
 			msg.Append("GETROOMLIST*JSON");
-			await SendMessage(msg.ToString());
+			Task.FromResult(SendMessage(msg.ToString()));
+			return false;
 		}
 
 		public async Task Authenticate(string userName, string passWord)
