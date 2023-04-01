@@ -1,5 +1,12 @@
-﻿using System.Net;
+﻿using System;
+using System.IO;
+using System.Net;
+using System.Net.Security;
+using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MessageServer.Models
@@ -8,65 +15,59 @@ namespace MessageServer.Models
 	{
 		private static readonly WebSocketServer instance = new WebSocketServer();
 		private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
-		private readonly HttpListener listener = new HttpListener();
+		private readonly TcpListener listener;
 		private readonly WebSocketHandler handler = new WebSocketHandler();
-
 		private readonly DBManager _dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
 
 		private WebSocketServer()
 		{
-			// Set up HttpListener to listen on any IP address
-			listener.Prefixes.Add("http://*:8080/");
+			// Set up TcpListener to listen on any IP address
+			listener = new TcpListener(IPAddress.Any, 8080);
 		}
 
 		public static WebSocketServer Instance { get { return instance; } }
 
 		public async Task Start()
 		{
-			// Start HttpListener
+			// Start TcpListener
 			listener.Start();
 
 			Console.WriteLine("WebSocket server started.");
 
+			// Load SSL certificate
+			var certPath = "C:\\temp\\server_socket.pfx";
+			var certPassword = "manic";
+			var certificate = new X509Certificate2(certPath, certPassword);
+
 			// Wait for incoming connections
 			while (!cancellation.IsCancellationRequested) {
-				HttpListenerContext context = null;
+				TcpClient client = null;
+				SslStream sslStream = null;
 
 				try {
-					// Get incoming HttpListenerContext
-					context = await listener.GetContextAsync();
-				} catch (HttpListenerException ex) {
-					// HttpListenerException will be thrown when the HttpListener is stopped
-					Console.WriteLine(ex.Message);
-					continue;
-				}
+					// Accept TcpClient and create SslStream
+					client = await listener.AcceptTcpClientAsync();
+					sslStream = new SslStream(client.GetStream(), false);
 
-				// Handle the incoming request
-				if (context.Request.IsWebSocketRequest) {
-					// Accept WebSocket connection
-					WebSocketContext socketContext = null;
+					// Authenticate the server using the SSL certificate
+					await sslStream.AuthenticateAsServerAsync(certificate, false, SslProtocols.Tls12, false);
 
-					try {
-						socketContext = await context.AcceptWebSocketAsync(subProtocol: null);
-					} catch (Exception ex) {
-						Console.WriteLine($"WebSocket connection error: {ex.Message}");
-						continue;
-					}
+					// Upgrade the connection to WebSocket
+					var socket = await sslStream.UpgradeToWebSocketAsync();
 
 					// Add WebSocket to handler
-					handler.AddSocket(socketContext.WebSocket);
-				}
-				else {
-					// Handle non-WebSocket requests
-					context.Response.StatusCode = 400;
-					context.Response.Close();
+					handler.AddSocket(socket);
+				} catch (Exception ex) {
+					Console.WriteLine($"WebSocket connection error: {ex.Message}");
+					sslStream?.Dispose();
+					client?.Close();
 				}
 			}
 		}
 
 		public async Task Stop()
 		{
-			// Stop HttpListener and WebSocketHandler
+			// Stop TcpListener and WebSocketHandler
 			cancellation.Cancel();
 			listener.Stop();
 			await handler.Stop();

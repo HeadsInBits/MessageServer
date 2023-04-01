@@ -49,12 +49,15 @@ namespace NetClient
 		{
 			DisconnectOnFailAuthentication = on;
 		}
-		
 		public async Task Connect(string url, string port)
 		{
 			// Create a new WebSocket instance and connect to the server
 			webSocket = new ClientWebSocket();
-			Uri serverUri = new Uri($"ws://{url}:{port}/");
+
+			// Trust self-signed certificates (Optional)
+			webSocket.Options.RemoteCertificateValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+
+			Uri serverUri = new Uri($"wss://{url}:{port}/");
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
 		}
 
@@ -62,28 +65,30 @@ namespace NetClient
 		{
 			// Create a new WebSocket instance and connect to the server
 			webSocket = new ClientWebSocket();
+
+			// Trust self-signed certificates (Optional)
+			webSocket.Options.RemoteCertificateValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
 		}
 
 		public async Task Listen()
 		{
-			byte[] receiveBuffer = new byte [32768];
+			byte [] receiveBuffer = new byte [32768];
 			ArraySegment<byte> receiveSegment = new ArraySegment<byte>(receiveBuffer);
-			while (webSocket.State == WebSocketState.Open)
-			{
+			while (webSocket.State == WebSocketState.Open) {
 				WebSocketReceiveResult result = await webSocket.ReceiveAsync(receiveSegment, CancellationToken.None);
-				if (result.MessageType == WebSocketMessageType.Text)
-				{
+				if (result.MessageType == WebSocketMessageType.Text) {
 					string receivedMessage = System.Text.Encoding.UTF8.GetString(receiveBuffer, 0, result.Count);
 
-					if (!ProcessIncomingMessage(receivedMessage))
-					{
+					if (!ProcessIncomingMessage(receivedMessage)) {
 						return;
 					}
 				}
 			}
 		}
-		
+
+
 		public List<Room> GetLocalClientRoomList()
 		{
 			return roomList;
