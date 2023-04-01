@@ -26,8 +26,8 @@ namespace NetClient
 		public event Action<(User user, string message)> onMessageRecievedEvent;
 		public event Action<bool> onAuthenticateEvent;
 		public event Action<List<User>> onUserListRecievedEvent;
-		public event Action<string> onUserJoinedEvent;
-		public event Action<string> onUserLeftEvent;
+		public event Action<(User user, Guid roomGuid)> onUserJoinedRoomEvent;
+		public event Action<(User user, Guid roomGuid)> onUserLeftEvent;
 		public event Action<List<Room>> onRoomListRecievedEvent;
 		public event Action<Room> onRoomCreatedEvent;
 		public event Action<Room> onRoomJoinedEvent;
@@ -179,14 +179,18 @@ namespace NetClient
 					onRoomMessageRecievedEvent?.Invoke((room, userFromRoom, roomMessageString));
 					break;
 
-				case "USERJOINED": //TODO: Needs work only used in call "ADDUSERTOROOM" Not implemented on client
-					onUserJoinedEvent?.Invoke(messageChunks [1]);
-					Console.WriteLine($"{messageChunks [1]} joined room");
+				case "USERJOINEDROOM": //"USERJOINEDROOM:[ROOM_GUID]:[USER_JSON]"
+					User joinedUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2));
+					Guid guidJoined = Guid.Parse(messageChunks[1]);
+					onUserJoinedRoomEvent?.Invoke((joinedUser, guidJoined));
+					Console.WriteLine($"{joinedUser.GetUserName()} joined room");
 					break;
 				
-				case "USERLEFT": //TODO: Not implemented on server
-					onUserLeftEvent?.Invoke(messageChunks [1]);
-					Console.WriteLine($"{messageChunks [1]} left room");
+				case "USERLEFT": //"USERJOINED:[USER_JSON]"
+					User leftUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2));
+					Guid guidLeft = Guid.Parse(messageChunks[1]);
+					onUserLeftEvent?.Invoke((leftUser, guidLeft));
+					Console.WriteLine($"{leftUser.GetUserName()} left room");
 					break;
 				
 				case "USERGUID": //"USERGUID:[User_Json]"

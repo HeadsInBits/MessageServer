@@ -316,18 +316,18 @@ public class WebSocketHandler
 				SendMessage(index, $"ROOMJOINED:{createdRoomJason}");
 				break;
 
+			//TODO: NEEDS VALIDATION AND ERROR HANDLING
 			case "ADDUSERTOROOM"://"ADDUSERTOROOM:[ROOM_GUID]:[UserName]"
-				User userProfile = _userController.GetUserProfileFromUserName(messageChunks [^1]);
+				User userProfile = _userController.GetUserProfileFromUserName(messageChunks [2]);
+				var roomGUID = messageChunks[1];
+				Room userAddedToRoom = _roomController.GetRoomFromGUID(Guid.Parse(roomGUID));
 				string jsonUser = User.GetJsonFromUser(userProfile);
 				Console.WriteLine(userProfile.WebSocketID);
 				Console.WriteLine(Guid.Parse(messageChunks[1]).ToString());
 				Console.WriteLine(User.GetJsonFromUser(userProfile));
-				
-				_roomController.AddUserToRoom(userProfile, Guid.Parse(messageChunks[1]));
-				
-				Console.WriteLine("still working");
-				SendMessage(index, "USERJOINED:" + jsonUser);
-				SendMessage(userProfile.WebSocketID, "ROOMJOINED:" + messageChunks [^1]);
+				_roomController.AddUserToRoom(userProfile, Guid.Parse(roomGUID));
+				SendMessage(index, $"USERJOINEDROOM:{roomGUID}:{jsonUser}");
+				SendMessage(userProfile.WebSocketID, $"ROOMJOINED:{Room.GetJsonFromRoom(userAddedToRoom)}");
 				break;
 			
 			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[MESSAGE]"
