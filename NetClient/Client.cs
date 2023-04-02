@@ -15,8 +15,9 @@ namespace NetClient
 		private bool isClientValidated = false;
 		private Guid ClientID;
 		private String ClientName;
-		public List<User> networkUsers = new List<User>();
-		public List<Room> roomList = new List<Room>();
+		private User ClientUser;
+		private List<User> networkUsers = new List<User>();
+		private List<Room> roomList = new List<Room>();
 		private List<Room> tmRoomsList = new List<Room>();
 		private List<User> tmUsersList = new List<User>();
 		public List<Room> subscribedRooms = new List<Room>();
@@ -130,6 +131,10 @@ namespace NetClient
 					else
 						break;
 
+				case CommunicationTypeEnum.ClientReceiveMessageSentSuccessful: //"{ClientReceiveMessageSentSuccessful}:{User.GetJsonFromUser(user)}:{message}"
+					ReceivedMessageToUserWasReceived(message, messageChunks);
+					break;
+				
 				case CommunicationTypeEnum.ClientReceiveYourGuid: //"IDIS:[USERID_GUID]"
 					ReceivedGuid(messageChunks);
 					break;
@@ -179,7 +184,7 @@ namespace NetClient
 					break;
 				
 				case CommunicationTypeEnum.ClientReceiveUserInfo: //"USERGUID:[User_Json]"
-					ReceivedUserGuid(message, messageChunks);
+					ReceivedUserInfo(message, messageChunks);
 					break;
 
 				default:
@@ -192,10 +197,20 @@ namespace NetClient
 
 		}
 
-		private void ReceivedUserGuid(string message, string[] messageChunks)
+		private void ReceivedMessageToUserWasReceived(string message, string[] messageChunks)
+		{
+			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonRoomString(message, messageChunks,
+				out User user);
+		}
+
+		private void ReceivedUserInfo(string message, string[] messageChunks)
 		{
 			User guidUser = ProcessMessageData.GetUserFromMessageFormatStringJsonUser(message, messageChunks);
 			Guid guid = guidUser.GetUserGuid();
+			if (guid == ClientID)
+			{
+				ClientUser = guidUser;
+			}
 			onRecievedUserWithGuid?.Invoke((guidUser, guid));
 		}
 
@@ -328,27 +343,29 @@ namespace NetClient
 
 		public async Task RequestMyClientId()
 		{
-			await SendMessage("GETMYGUID");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveRequestClientGuid}");
 		}
 
 		public async Task RequestUserFromGuid(Guid guid)
 		{
-			await SendMessage($"USERFROMGUID:{guid.ToString()}");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveRequestUserFromGuid}:{guid.ToString()}");
 		}
 
 		private async Task SendReceivedMessage(User user, string Message)
 		{
-			await SendMessage($"RECIEVEDMESSAGE:{User.GetJsonFromUser(user)}:{Message}");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveMessageReceivedSuccessfully}:{User.GetJsonFromUser(user)}:{Message}");
 		}
+
 		
+
 		public async void RequestToAddUserToRoom(User user, Guid roomID)
 		{
-			await SendMessage($"ADDUSERTOROOM:{roomID.ToString()}:{user.GetUserName()}");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveRequestAddUserRoom}:{roomID.ToString()}:{user.GetUserName()}");
 		}
 
 		public async Task RequestCreateRoom(string meta, int roomSize, bool isPublic)
 		{
-			await SendMessage($"CREATEROOM:{roomSize.ToString()}:{(isPublic?"PUBLIC":"PRIVATE")}:{meta}");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveRequestCreateRoom}:{roomSize.ToString()}:{(isPublic?"PUBLIC":"PRIVATE")}:{meta}");
 		}
 
 		public bool RequestUserList()
@@ -357,7 +374,7 @@ namespace NetClient
 			{
 				return false;
 			}
-			Task.FromResult(SendMessage("GETUSERLIST"));
+			Task.FromResult(SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveRequestUserListJson}"));
 			return true;
 		}
 
@@ -367,23 +384,23 @@ namespace NetClient
 			{
 				return false;
 			}
-			Task.FromResult(SendMessage("GETROOMLIST*JSON"));
+			Task.FromResult(SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveRequestRoomListJson}"));
 			return false;
 		}
 
 		public async Task RequestAuthenticate(string userName, string passWord)
 		{
-			await SendMessage($"AUTHENTICATE:{userName}:{passWord}");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveAuthenticate}:{userName}:{passWord}");
 		}
 		
 		public async void SendMessageToUser(User user, string Message)
 		{
 			var userJson = User.GetJsonFromUser(user);
-			await SendMessage($"SENDMESGTOUSER:{userJson}:{Message}");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveRequestSendMessageToUser}:{userJson}:{Message}");
 		}
 		public async Task SendMessageToRoomAsync(Guid RoomID, String Message)
 		{
-			await SendMessage($"SENDMSGTOROOM:{RoomID.ToString()}:{Message}");
+			await SendMessage($"{(int)CommunicationTypeEnum.ServerReceiveSendMessageToRoom}:{RoomID.ToString()}:{Message}");
 		}
 	}
 }

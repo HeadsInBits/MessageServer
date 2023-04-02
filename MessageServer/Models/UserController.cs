@@ -54,4 +54,16 @@ public class UserController
 	{
 		connectedClients.Remove(user);
 	}
+
+	public int GetWebSocketIdFromUser(User user)
+	{
+		foreach (var client in connectedClients)
+		{
+			if (client.GetUserGuid() == user.GetUserGuid())
+			{
+				return client.WebSocketID;
+			}
+		}
+		return -1;
+	}
 }

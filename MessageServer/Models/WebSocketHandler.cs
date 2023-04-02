@@ -144,42 +144,49 @@ public class WebSocketHandler
 	{
 		string [] messageChunks = message.Split(':');
 
-		switch (messageChunks [0]) {
-			case "AUTHENTICATE": //"AUTHENTICATE:{userName}:{passWord}"
+		var s = (CommunicationTypeEnum)(int.Parse(messageChunks [0]));
+		switch (s) {
+			case CommunicationTypeEnum.ServerReceiveAuthenticate: //"[ServerReceiveAuthenticate]:{userName}:{passWord}"
 				Authenticate(index, message);
 				break;
+			
+			case CommunicationTypeEnum.ServerReceiveMessageReceivedSuccessfully: //"[ServerReceiveMessageReceivedSuccessfully]:{User.GetJsonFromUser(user)}:{Message}"
+				string messageFromUser = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonRoomString(message, messageChunks,
+					out User sender);
+				SendUserReceivedMessage(index, sender, messageFromUser);
+				break;
 
-			case "USERFROMGUID": //"USERFROMGUID:{guid.ToString()}"
+			case CommunicationTypeEnum.ServerReceiveRequestUserFromGuid: //"[ServerReceiveRequestUserFromGuid]:{guid.ToString()}"
 				User user = _userController.GetUserProfileFromSocketGuid(Guid.Parse(messageChunks[1]));
 				SendUser(index, user);
 				break;
 			
-			case "GETMYID": //TODO: Not implemented on client maybe not needed
+			case CommunicationTypeEnum.ServerReceiveRequestClientWebSocketId: //TODO: Not implemented on client maybe not needed
 				SendClientWebSocketId(index);
 				break;
 			
-			case "GETMYGUID": //"GETMYGUID"
+			case CommunicationTypeEnum.ServerReceiveRequestClientGuid: //"[ServerReceiveRequestClientGuid]"
 				User userGUID = _userController.GetUserProfileFromSocketId(index);
 				SendClientGuid(index, userGUID);
 				break;
 
-			case "GETUSERLIST": //"GETUSERLIST"
+			case CommunicationTypeEnum.ServerReceiveRequestUserListJson: //"[ServerReceiveRequestUserListJson]"
 				GetUserListJson(index);
 				break;
 			
-			case "SENDMESGTOUSER": //"SENDMESGTOUSER:{userJson}:{Message}"
+			case CommunicationTypeEnum.ServerReceiveRequestSendMessageToUser: //"[ServerReceiveRequestSendMessageToUser]:{userJson}:{Message}"
 				var m = messageChunks [^1];
 				string jsonStrUser = message.Substring(messageChunks[0].Length + 1, message.Length - (m.Length + messageChunks [0].Length + 2));
 				Console.WriteLine("Sending a Direct Message to:" + m);
 				SendCommsToUser(jsonStrUser, m);
 				break;
 
-				//"SENDMESGTOALL:[USERNAME_STRING]:[MESSAGE]"
-				case "SENDMESGTOALL": //TODO: Not implemented on client
+				//"[ServerReceiveRequestSendMessageToAll]:[USERNAME_STRING]:[MESSAGE]"
+				case CommunicationTypeEnum.ServerReceiveRequestSendMessageToAll: //TODO: Not implemented on client
 				SendMessageToAll(index, message, messageChunks);
 				break;
 
-			case "CREATEROOM": //"CREATEROOM:{roomSize_int}:{(isPublic?"PUBLIC":"PRIVATE")_string}:{meta_string}"
+			case CommunicationTypeEnum.ServerReceiveRequestCreateRoom: //"[ServerReceiveRequestCreateRoom]:{roomSize_int}:{(isPublic?"PUBLIC":"PRIVATE")_string}:{meta_string}"
 				Room createdRoom = _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index), messageChunks);
 				String createdRoomJason = Room.GetJsonFromRoom(createdRoom);
 				SendRoomCreated(index, createdRoomJason);
@@ -187,7 +194,7 @@ public class WebSocketHandler
 				break;
 
 			//TODO: NEEDS VALIDATION AND ERROR HANDLING
-			case "ADDUSERTOROOM"://"ADDUSERTOROOM:[ROOM_GUID]:[UserName]"
+			case CommunicationTypeEnum.ServerReceiveRequestAddUserRoom://"[ServerReceiveRequestAddUserRoom]:[ROOM_GUID]:[UserName]"
 				User userProfile = _userController.GetUserProfileFromUserName(messageChunks [2]);
 				var roomGUID = messageChunks[1];
 				Room userAddedToRoom = _roomController.GetRoomFromGUID(Guid.Parse(roomGUID));
@@ -200,7 +207,7 @@ public class WebSocketHandler
 				SendRoomJoined(userProfile, userAddedToRoom);
 				break;
 			
-			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[MESSAGE]"
+			case CommunicationTypeEnum.ServerReceiveSendMessageToRoom: //"[ServerReceiveSendMessageToRoom]:[ROOMID]:[MESSAGE]"
 				Guid guid = Guid.Parse(messageChunks[1]);
 				Room room = _roomController.GetRoomFromGUID(guid);
 				User userMessage = _userController.GetUserProfileFromSocketId(index);
@@ -213,15 +220,15 @@ public class WebSocketHandler
 				}
 				break;
 
-			case "LISTUSERSINROOM"://TODO: Not implemented on client
+			case CommunicationTypeEnum.ServerReceiveRequestUsernamesInRoom://TODO: Not implemented on client
 				SendUsersUsernameInRoom(index, Guid.Parse(messageChunks [1]));
 			break;
 
-			case "GETROOMLIST": //TODO: Removed on client deprecated? or implement on client
+			case CommunicationTypeEnum.ServerReceiveRequestRoomGuidList: //TODO: Removed on client deprecated? or implement on client
 				SendListOfRoomGuids(index);
 			break;
 
-			case "GETROOMLIST*JSON": //"GETROOMLIST*JSON"
+			case CommunicationTypeEnum.ServerReceiveRequestRoomListJson: //"[ServerReceiveRequestRoomListJson]"
 				SendListOfRoomJson(index);	
 			break;
 
@@ -477,6 +484,13 @@ public class WebSocketHandler
 	private void SendUserListJsonPaginated(int index, CommunicationTypeEnum command, int sentNumber, int count, int c, List<User> list)
 	{
 		SendMessage(index, $"{(int)command}:{sentNumber}:{count}-{count + c}:{User.GetJsonFromUsersList(list)}");
+	}
+	
+	private void SendUserReceivedMessage(int index, User user, string message)
+	{
+		User Reciever = _userController.GetUserProfileFromSocketId(index);
+		int i = _userController.GetWebSocketIdFromUser(user);
+		SendMessage(i, $"{(int)CommunicationTypeEnum.ClientReceiveMessageSentSuccessful}:{User.GetJsonFromUser(Reciever)}:{message}");
 	}
 	
 	//TODO:validate message is not a server command / send with message i.e. "COMMSTOALLUSERS:USER:MESSAGE"
