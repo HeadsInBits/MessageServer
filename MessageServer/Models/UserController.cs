@@ -49,4 +49,9 @@ public class UserController
 
 		return Guid.Empty;
 	}
+
+	public void RemoveUser(User user)
+	{
+		connectedClients.Remove(user);
+	}
 }

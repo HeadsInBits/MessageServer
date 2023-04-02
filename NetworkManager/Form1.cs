@@ -18,7 +18,7 @@ public partial class Form1 : Form
 
 	private void RefreshUsersButton_Click(object sender, EventArgs e)
 	{
-		Task.FromResult(netClient.UpdateUserList());
+		Task.FromResult(netClient.RequestUserList());
 	}
 
 	private void LoginButton_Click(object sender, EventArgs e)
@@ -32,7 +32,7 @@ public partial class Form1 : Form
 
 		await netClient.Connect("localhost","8080");
 		await Task.FromResult(netClient.Listen());
-		await Task.FromResult(netClient.Authenticate(UserInput.Text, PasswordInput.Text));
+		await Task.FromResult(netClient.RequestAuthenticate(UserInput.Text, PasswordInput.Text));
 	}
 
 	private void RefreshRoomsButton_Click(object sender, EventArgs e)
@@ -42,7 +42,7 @@ public partial class Form1 : Form
 
 	private void CreateRoomButton_Click(object sender, EventArgs e)
 	{
-		netClient.CreateRoom("Manic", 50, true);
+		netClient.RequestCreateRoom("Manic", 50, true);
 	}
 
 	private void Form1_Load(object sender, EventArgs e)

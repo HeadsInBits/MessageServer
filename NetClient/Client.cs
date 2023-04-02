@@ -25,9 +25,10 @@ namespace NetClient
 		//Events
 		public event Action<(User user, string message)> onMessageRecievedEvent;
 		public event Action<bool> onAuthenticateEvent;
+		public event Action<Room> onRoomDestroyedEvent;
 		public event Action<List<User>> onUserListRecievedEvent;
 		public event Action<(User user, Guid roomGuid)> onUserJoinedRoomEvent;
-		public event Action<(User user, Guid roomGuid)> onUserLeftEvent;
+		public event Action<(User user, Guid roomGuid)> onUserLeftRoomEvent;
 		public event Action<List<Room>> onRoomListRecievedEvent;
 		public event Action<Room> onRoomCreatedEvent;
 		public event Action<Room> onRoomJoinedEvent;
@@ -39,6 +40,7 @@ namespace NetClient
 		private bool DisconnectOnFailAuthentication = false;
 		private bool handlingUserPationation = false;
 		private bool handlingRoomsPationation = false;
+
 
 		~Client()
 		{
@@ -64,6 +66,11 @@ namespace NetClient
 			webSocket = new ClientWebSocket();
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
 		}
+		
+		public async void Disconnect()
+		{
+			await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Destroyed", CancellationToken.None);
+		}
 
 		public async Task Listen()
 		{
@@ -84,12 +91,19 @@ namespace NetClient
 			}
 		}
 		
+		private async Task SendMessage(string message)
+        {
+        	ArraySegment<byte> buffer = new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(message));
+        	await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+        	onMessageSentToSocket?.Invoke(message);
+
+        }
+		
 		public List<Room> GetLocalClientRoomList()
 		{
 			return roomList;
 		}
-
-
+		
 		public bool IsClientValidated()
 		{
 			return isClientValidated;
@@ -100,10 +114,7 @@ namespace NetClient
 			return ClientName;
 		}
 
-		public async void Disconnect()
-		{
-			await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Destroyed", CancellationToken.None);
-		}
+		
 		private bool ProcessIncomingMessage(string message)
 		{
 			Console.WriteLine("INCOMING MESSAGE!: " + message);
@@ -113,41 +124,25 @@ namespace NetClient
 
 			switch (messageChunks [0]) {
 				case "AUTH": //"AUTH:OK" / "AUTH:FAILED"
-					// authorisation accepted by the server.
-					if (messageChunks [1] == "OK") {
-						isClientValidated = true;
-						onAuthenticateEvent?.Invoke(true);
-						Task.FromResult(RequestMyClientID());
+					if (!ReceivedAuthenticate(messageChunks))
+						return false;
+					else
 						break;
-					}
-					else {
-						onAuthenticateEvent?.Invoke(false);
-						if (DisconnectOnFailAuthentication) return false;
-						throw new AuthenticationException("User is not Validated");
-						break;
-					}
-					break;
 
 				case "YOURGUID": //"IDIS:[USERID_GUID]"
-					ClientID = Guid.Parse(messageChunks [1]);
-					onIDRecievedEvent?.Invoke(ClientID);
+					ReceivedGuid(messageChunks);
 					break;
 
 				case "USERLIST": //"USERLIST:[USERS_JSON]"
-					networkUsers = GetUsersFromMessageFormatStringJsonUserList(message, messageChunks);
-					onUserListRecievedEvent?.Invoke(networkUsers);
+					ReceivedUserList(message, messageChunks);
 					break;
 
 				case "RECIEVEMESSAGE": //"RECIEVEMESSAGE:[USER_JSON]:[MESSAGE_STRING]"
-					var messageString = GetUserMessageFromMessageFormatStringJsonRoomString(message, messageChunks, out var user);
-					ReceiveMessage(user,messageString);
-					onMessageRecievedEvent?.Invoke((user, messageString));
+					ReceivedMessage(message, messageChunks);
 					break;
 
-				case "ROOMLIST*JSON": //"ROOMLIST*JSON:[ROOMS_JSON]"
-					var JsonDe = GetRoomsListFromMessageFormatStringJsonRooms(message, messageChunks);
-					roomList = JsonDe;
-					onRoomListRecievedEvent?.Invoke(roomList);
+				case "ROOMLIST*JSON": //"ROOMLIST*JSON:[ROOMS_LIST_JSON]"
+					ReceivedRoomListJson(message, messageChunks);
 					break;
 				
 				case "ROOMLISTPAGIJSON": //"ROOMLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[ROOMS_JSON]"
@@ -159,45 +154,31 @@ namespace NetClient
 					break;
 
 				case "ROOMJOINED": //"ROOMJOINED:[ROOM_JSON] 
-					Room roomFromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
-					onRoomJoinedEvent?.Invoke(roomFromJson);
-					Console.WriteLine($"joined room {roomFromJson.GetGuid().ToString()}");
+					ReceivedRoomJoined(message, messageChunks);
+					break;
+				
+				case "ROOMDESTROYED": //"ROOMDESTROYED:[ROOM_JSON] 
+					ReceivedRoomDestroyed(message, messageChunks);
 					break;
 
 				case "ROOMCREATED": //"ROOMCREATED:[ROOM_JSON] 
-					Room fromJson = GetRoomFromMessageFormatStringRoom(message, messageChunks);
-					onRoomCreatedEvent?.Invoke(fromJson);
-					Console.WriteLine($"room {fromJson.GetGuid().ToString()} has been created");
+					ReceivedRoomCreated(message, messageChunks);
 					break;
-
-				case "ROOMMSG": //"ROOMMSG:[ROOMID_JSON]:[UserID_GUID]:[MESSAGE_STRING]"
-					Guid userID = Guid.Parse(messageChunks[^2]);
-					string roomMessageString = messageChunks[^1];
-					string jsonStrRoom = message.Substring(messageChunks[0].Length + 1, message.Length - (messageChunks [^2].Length + messageChunks [^1].Length + messageChunks [0].Length + 3));
-					Room room = Room.GetRoomFromJson(jsonStrRoom);
-					User userFromRoom = room.GetUserByGuid(userID);
-					onRoomMessageRecievedEvent?.Invoke((room, userFromRoom, roomMessageString));
+				
+				case "ROOMMSG": //"ROOMMSG:[UserID_GUID]:[ROOMID_JSON]:[MESSAGE_STRING]"
+					ReceivedRoomMessage(message, messageChunks);
 					break;
 
 				case "USERJOINEDROOM": //"USERJOINEDROOM:[ROOM_GUID]:[USER_JSON]"
-					User joinedUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2));
-					Guid guidJoined = Guid.Parse(messageChunks[1]);
-					onUserJoinedRoomEvent?.Invoke((joinedUser, guidJoined));
-					Console.WriteLine($"{joinedUser.GetUserName()} joined room");
+					ReceivedUserJoinedRoom(message, messageChunks);
 					break;
 				
-				case "USERLEFT": //"USERJOINED:[USER_JSON]"
-					User leftUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2));
-					Guid guidLeft = Guid.Parse(messageChunks[1]);
-					onUserLeftEvent?.Invoke((leftUser, guidLeft));
-					Console.WriteLine($"{leftUser.GetUserName()} left room");
+				case "USERLEFTROOM": //"USERLEFTROOM:[ROOM_GUID]:[USER_JSON]"
+					ReceivedUserLeftRoom(message, messageChunks);
 					break;
 				
 				case "USERGUID": //"USERGUID:[User_Json]"
-					
-					User guidUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + 1));
-					Guid guid = guidUser.GetUserGuid();
-					onRecievedUserWithGuid?.Invoke((guidUser, guid));
+					ReceivedUserGuid(message, messageChunks);
 					break;
 
 				default:
@@ -208,6 +189,105 @@ namespace NetClient
 
 			return true;
 
+		}
+
+		private void ReceivedUserGuid(string message, string[] messageChunks)
+		{
+			User guidUser = ProcessMessage.GetUserFromMessageFormatStringJsonUser(message, messageChunks);
+			Guid guid = guidUser.GetUserGuid();
+			onRecievedUserWithGuid?.Invoke((guidUser, guid));
+		}
+
+		private void ReceivedUserLeftRoom(string message, string[] messageChunks)
+		{
+			User leftUser =
+				ProcessMessage.GetUserAndGuidFromFormatStringGuidUserJson(message, messageChunks, out var guidLeft);
+			onUserLeftRoomEvent?.Invoke((leftUser, guidLeft));
+			Console.WriteLine($"{leftUser.GetUserName()} left room");
+		}
+
+		private void ReceivedUserJoinedRoom(string message, string[] messageChunks)
+		{
+			var joinedUser =
+				ProcessMessage.GetUserAndGuidFromFormatStringGuidUserJson(message, messageChunks, out var guidJoined);
+			onUserJoinedRoomEvent?.Invoke((joinedUser, guidJoined));
+			Console.WriteLine($"{joinedUser.GetUserName()} joined room");
+		}
+
+		private void ReceivedRoomMessage(string message, string[] messageChunks)
+		{
+			var roomMessageString = ProcessMessage.GetRoomUserAndMessageFromFormatStringGuidRoomJsonMessage(message, messageChunks, out var room,
+					out var userFromRoom);
+			onRoomMessageRecievedEvent?.Invoke((room, userFromRoom, roomMessageString));
+		}
+
+		private void ReceivedRoomCreated(string message, string[] messageChunks)
+		{
+			Room fromJson = ProcessMessage.GetRoomFromMessageFormatStringRoom(message, messageChunks);
+			onRoomCreatedEvent?.Invoke(fromJson);
+			Console.WriteLine($"created room: {fromJson.GetGuid().ToString()} has been created");
+		}
+
+		private void ReceivedRoomDestroyed(string message, string[] messageChunks)
+		{
+			Room destroyedRoomFromJson = ProcessMessage.GetRoomFromMessageFormatStringRoom(message, messageChunks);
+			onRoomDestroyedEvent?.Invoke(destroyedRoomFromJson);
+			Console.WriteLine($"room has been destroyed: {destroyedRoomFromJson.GetGuid().ToString()}");
+		}
+
+		private void ReceivedRoomJoined(string message, string[] messageChunks)
+		{
+			Room roomFromJson = ProcessMessage.GetRoomFromMessageFormatStringRoom(message, messageChunks);
+			onRoomJoinedEvent?.Invoke(roomFromJson);
+			Console.WriteLine($"joined room: {roomFromJson.GetGuid().ToString()}");
+		}
+
+		private void ReceivedRoomListJson(string message, string[] messageChunks)
+		{
+			roomList.Clear();
+			var JsonDe = ProcessMessage.GetRoomsListFromMessageFormatStringJsonRooms(message, messageChunks);
+			roomList = JsonDe;
+			onRoomListRecievedEvent?.Invoke(roomList);
+		}
+
+		private void ReceivedMessage(string message, string[] messageChunks)
+		{
+			var messageString =
+				ProcessMessage.GetUserMessageFromMessageFormatStringJsonRoomString(message, messageChunks,
+					out var user);
+			SendReceivedMessage(user, messageString);
+			onMessageRecievedEvent?.Invoke((user, messageString));
+		}
+
+		private void ReceivedUserList(string message, string[] messageChunks)
+		{
+			networkUsers = ProcessMessage.GetUsersFromMessageFormatStringJsonUserList(message, messageChunks);
+			onUserListRecievedEvent?.Invoke(networkUsers);
+		}
+
+		private void ReceivedGuid(string[] messageChunks)
+		{
+			ClientID = Guid.Parse(messageChunks[1]);
+			onIDRecievedEvent?.Invoke(ClientID);
+		}
+
+		private bool ReceivedAuthenticate(string[] messageChunks)
+		{
+			// authorisation accepted by the server.
+			if (messageChunks[1] == "OK")
+			{
+				isClientValidated = true;
+				onAuthenticateEvent?.Invoke(true);
+				Task.FromResult(RequestMyClientId());
+				return true;
+			}
+			else
+			{
+				onAuthenticateEvent?.Invoke(false);
+				if (DisconnectOnFailAuthentication) return false;
+				throw new AuthenticationException("User is not Validated");
+			}
+			
 		}
 
 		private void ReceivedPaginatedUserJsonDataMessage(string message, string[] messageChunks)
@@ -245,9 +325,8 @@ namespace NetClient
 			}
 		}
 
-		public async Task RequestMyClientID()
+		public async Task RequestMyClientId()
 		{
-			
 			await SendMessage("GETMYGUID");
 		}
 
@@ -256,71 +335,22 @@ namespace NetClient
 			await SendMessage($"USERFROMGUID:{guid.ToString()}");
 		}
 
-		private List<Room> GetRoomsListFromMessageFormatStringJsonRooms(string message, string[] messageChunks)
+		private async Task SendReceivedMessage(User user, string Message)
 		{
-			string jsonData = message.Substring(messageChunks[0].Length + 1);
-			roomList.Clear();
-			List<Room> JsonDe = Room.GetRoomListFromJson(jsonData);
-			return JsonDe;
-		}
-
-		private static string GetUserMessageFromMessageFormatStringJsonRoomString(string message,
-			string[] messageChunks, out User user)
-		{
-			var messageString = messageChunks[^1];
-			string jsonStrUser = message.Substring(messageChunks[0].Length + 1,
-				message.Length - (messageString.Length + messageChunks[0].Length + 2));
-			user = User.GetUserFromJson(jsonStrUser);
-			return messageString;
-		}
-
-		public List<User> GetUsersFromMessageFormatStringJsonUserList(string message, string[] messageChunks)
-		{
-			string jsonStrUsers = message.Substring(messageChunks[0].Length + 1);
-			return User.GetUsersListFromJson(jsonStrUsers);
-		}
-
-		private static Room GetRoomFromMessageFormatStringRoom(string message, string[] messageChunks)
-		{
-			string jsonStrRoomCreated = message.Substring(messageChunks[0].Length + 1);
-			Room fromJson = Room.GetRoomFromJson(jsonStrRoomCreated);
-			return fromJson;
-		}
-
-		private void ReceiveMessage(User user, string Message)
-		{
-			//already called this
-			//onMessageRecievedEvent?.Invoke((user, Message));
+			await SendMessage($"RECIEVEDMESSAGE:{User.GetJsonFromUser(user)}:{Message}");
 		}
 		
 		public async void RequestToAddUserToRoom(User user, Guid roomID)
 		{
-			await SendMessage($"ADDUSERTOROOM:{roomID}:{user.GetUserName()}");
+			await SendMessage($"ADDUSERTOROOM:{roomID.ToString()}:{user.GetUserName()}");
 		}
 
-		private async Task SendMessage(string message)
+		public async Task RequestCreateRoom(string meta, int roomSize, bool isPublic)
 		{
-			ArraySegment<byte> buffer = new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(message));
-			await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
-			onMessageSentToSocket?.Invoke(message);
-
+			await SendMessage($"CREATEROOM:{roomSize.ToString()}:{(isPublic?"PUBLIC":"PRIVATE")}:{meta}");
 		}
 
-		public async Task CreateRoom(string meta, int roomSize, bool isPublic)
-		{
-			var msg = new StringBuilder();
-			msg.Append($"CREATEROOM:{roomSize}:{(isPublic?"PUBLIC":"PRIVATE")}:{meta}");
-			await SendMessage(msg.ToString());
-		}
-
-		public async Task SendMessageToRoomAsync(Guid RoomID, String Message)
-		{
-			var msg = new StringBuilder();
-			msg.Append($"SENDMSGTOROOM:{RoomID}:{Message}");
-			await SendMessage(msg.ToString());
-		}
-
-		public bool UpdateUserList()
+		public bool RequestUserList()
 		{
 			if (handlingUserPationation)
 			{
@@ -336,25 +366,23 @@ namespace NetClient
 			{
 				return false;
 			}
-			var msg = new StringBuilder();
-			msg.Append("GETROOMLIST*JSON");
-			Task.FromResult(SendMessage(msg.ToString()));
+			Task.FromResult(SendMessage("GETROOMLIST*JSON"));
 			return false;
 		}
 
-		public async Task Authenticate(string userName, string passWord)
+		public async Task RequestAuthenticate(string userName, string passWord)
 		{
-			string Authmessage = $"AUTHENTICATE:{userName}:{passWord}";
-			await SendMessage(Authmessage);
+			await SendMessage($"AUTHENTICATE:{userName}:{passWord}");
 		}
 		
 		public async void SendMessageToUser(User user, string Message)
 		{
 			var userJson = User.GetJsonFromUser(user);
-			string msg = $"SENDMESGTOUSER:{userJson}:{Message}";
-			await SendMessage(msg);
+			await SendMessage($"SENDMESGTOUSER:{userJson}:{Message}");
 		}
-
-
+		public async Task SendMessageToRoomAsync(Guid RoomID, String Message)
+		{
+			await SendMessage($"SENDMSGTOROOM:{RoomID.ToString()}:{Message}");
+		}
 	}
 }

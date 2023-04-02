@@ -251,5 +251,10 @@ namespace LibObjects
 			}
 			return new User("N/A", false, Guid.Empty, -1);
 		}
+
+		public User GetCreator()
+		{
+			return _creator;
+		}
 	}
 }
