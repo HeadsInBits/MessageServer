@@ -46,7 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ProcessMessage.cs" />
+    <Compile Include="CommunicationTypeEnum.cs" />
+    <Compile Include="ProcessMessageData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Room.cs" />
     <Compile Include="User.cs" />

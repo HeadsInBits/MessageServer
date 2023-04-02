@@ -122,62 +122,63 @@ namespace NetClient
 
 			string [] messageChunks = message.Split(':');
 
-			switch (messageChunks [0]) {
-				case "AUTH": //"AUTH:OK" / "AUTH:FAILED"
+			var s = (CommunicationTypeEnum)int.Parse(messageChunks [0]);
+			switch (s) {
+				case CommunicationTypeEnum.ClientReceiveAuthenticated: //"AUTH:OK" / "AUTH:FAILED"
 					if (!ReceivedAuthenticate(messageChunks))
 						return false;
 					else
 						break;
 
-				case "YOURGUID": //"IDIS:[USERID_GUID]"
+				case CommunicationTypeEnum.ClientReceiveYourGuid: //"IDIS:[USERID_GUID]"
 					ReceivedGuid(messageChunks);
 					break;
 
-				case "USERLIST": //"USERLIST:[USERS_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserListJson: //"USERLIST:[USERS_JSON]"
 					ReceivedUserList(message, messageChunks);
 					break;
 
-				case "RECIEVEMESSAGE": //"RECIEVEMESSAGE:[USER_JSON]:[MESSAGE_STRING]"
+				case CommunicationTypeEnum.ClientReceiveMessageFromUser: //"RECIEVEMESSAGE:[USER_JSON]:[MESSAGE_STRING]"
 					ReceivedMessage(message, messageChunks);
 					break;
 
-				case "ROOMLIST*JSON": //"ROOMLIST*JSON:[ROOMS_LIST_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomListJson: //"ROOMLIST*JSON:[ROOMS_LIST_JSON]"
 					ReceivedRoomListJson(message, messageChunks);
 					break;
 				
-				case "ROOMLISTPAGIJSON": //"ROOMLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[ROOMS_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomListJsonPaginated: //"ROOMLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[ROOMS_JSON]"
 					ReceivedPaginatedRoomJsonDataMessage(message, messageChunks);
 					break;
 				
-				case "USERLISTPAGIJSON": //"USERLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserListJsonPaginated: //"USERLISTPAGIJSON:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]"
 					ReceivedPaginatedUserJsonDataMessage(message, messageChunks);
 					break;
 
-				case "ROOMJOINED": //"ROOMJOINED:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveJoinedRoom: //"ROOMJOINED:[ROOM_JSON] 
 					ReceivedRoomJoined(message, messageChunks);
 					break;
 				
-				case "ROOMDESTROYED": //"ROOMDESTROYED:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveRoomDestroyed: //"ROOMDESTROYED:[ROOM_JSON] 
 					ReceivedRoomDestroyed(message, messageChunks);
 					break;
 
-				case "ROOMCREATED": //"ROOMCREATED:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveRoomCreated: //"ROOMCREATED:[ROOM_JSON] 
 					ReceivedRoomCreated(message, messageChunks);
 					break;
 				
-				case "ROOMMSG": //"ROOMMSG:[UserID_GUID]:[ROOMID_JSON]:[MESSAGE_STRING]"
+				case CommunicationTypeEnum.ClientReceiveRoomMessage: //"ROOMMSG:[UserID_GUID]:[ROOMID_JSON]:[MESSAGE_STRING]"
 					ReceivedRoomMessage(message, messageChunks);
 					break;
 
-				case "USERJOINEDROOM": //"USERJOINEDROOM:[ROOM_GUID]:[USER_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserJoinedRoom: //"USERJOINEDROOM:[ROOM_GUID]:[USER_JSON]"
 					ReceivedUserJoinedRoom(message, messageChunks);
 					break;
 				
-				case "USERLEFTROOM": //"USERLEFTROOM:[ROOM_GUID]:[USER_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserLeftRoom: //"USERLEFTROOM:[ROOM_GUID]:[USER_JSON]"
 					ReceivedUserLeftRoom(message, messageChunks);
 					break;
 				
-				case "USERGUID": //"USERGUID:[User_Json]"
+				case CommunicationTypeEnum.ClientReceiveUserInfo: //"USERGUID:[User_Json]"
 					ReceivedUserGuid(message, messageChunks);
 					break;
 
@@ -193,7 +194,7 @@ namespace NetClient
 
 		private void ReceivedUserGuid(string message, string[] messageChunks)
 		{
-			User guidUser = ProcessMessage.GetUserFromMessageFormatStringJsonUser(message, messageChunks);
+			User guidUser = ProcessMessageData.GetUserFromMessageFormatStringJsonUser(message, messageChunks);
 			Guid guid = guidUser.GetUserGuid();
 			onRecievedUserWithGuid?.Invoke((guidUser, guid));
 		}
@@ -201,7 +202,7 @@ namespace NetClient
 		private void ReceivedUserLeftRoom(string message, string[] messageChunks)
 		{
 			User leftUser =
-				ProcessMessage.GetUserAndGuidFromFormatStringGuidUserJson(message, messageChunks, out var guidLeft);
+				ProcessMessageData.GetUserAndGuidFromFormatStringGuidUserJson(message, messageChunks, out var guidLeft);
 			onUserLeftRoomEvent?.Invoke((leftUser, guidLeft));
 			Console.WriteLine($"{leftUser.GetUserName()} left room");
 		}
@@ -209,35 +210,35 @@ namespace NetClient
 		private void ReceivedUserJoinedRoom(string message, string[] messageChunks)
 		{
 			var joinedUser =
-				ProcessMessage.GetUserAndGuidFromFormatStringGuidUserJson(message, messageChunks, out var guidJoined);
+				ProcessMessageData.GetUserAndGuidFromFormatStringGuidUserJson(message, messageChunks, out var guidJoined);
 			onUserJoinedRoomEvent?.Invoke((joinedUser, guidJoined));
 			Console.WriteLine($"{joinedUser.GetUserName()} joined room");
 		}
 
 		private void ReceivedRoomMessage(string message, string[] messageChunks)
 		{
-			var roomMessageString = ProcessMessage.GetRoomUserAndMessageFromFormatStringGuidRoomJsonMessage(message, messageChunks, out var room,
+			var roomMessageString = ProcessMessageData.GetRoomUserAndMessageFromFormatStringGuidRoomJsonMessage(message, messageChunks, out var room,
 					out var userFromRoom);
 			onRoomMessageRecievedEvent?.Invoke((room, userFromRoom, roomMessageString));
 		}
 
 		private void ReceivedRoomCreated(string message, string[] messageChunks)
 		{
-			Room fromJson = ProcessMessage.GetRoomFromMessageFormatStringRoom(message, messageChunks);
+			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoom(message, messageChunks);
 			onRoomCreatedEvent?.Invoke(fromJson);
 			Console.WriteLine($"created room: {fromJson.GetGuid().ToString()} has been created");
 		}
 
 		private void ReceivedRoomDestroyed(string message, string[] messageChunks)
 		{
-			Room destroyedRoomFromJson = ProcessMessage.GetRoomFromMessageFormatStringRoom(message, messageChunks);
+			Room destroyedRoomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoom(message, messageChunks);
 			onRoomDestroyedEvent?.Invoke(destroyedRoomFromJson);
 			Console.WriteLine($"room has been destroyed: {destroyedRoomFromJson.GetGuid().ToString()}");
 		}
 
 		private void ReceivedRoomJoined(string message, string[] messageChunks)
 		{
-			Room roomFromJson = ProcessMessage.GetRoomFromMessageFormatStringRoom(message, messageChunks);
+			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoom(message, messageChunks);
 			onRoomJoinedEvent?.Invoke(roomFromJson);
 			Console.WriteLine($"joined room: {roomFromJson.GetGuid().ToString()}");
 		}
@@ -245,7 +246,7 @@ namespace NetClient
 		private void ReceivedRoomListJson(string message, string[] messageChunks)
 		{
 			roomList.Clear();
-			var JsonDe = ProcessMessage.GetRoomsListFromMessageFormatStringJsonRooms(message, messageChunks);
+			var JsonDe = ProcessMessageData.GetRoomsListFromMessageFormatStringJsonRooms(message, messageChunks);
 			roomList = JsonDe;
 			onRoomListRecievedEvent?.Invoke(roomList);
 		}
@@ -253,7 +254,7 @@ namespace NetClient
 		private void ReceivedMessage(string message, string[] messageChunks)
 		{
 			var messageString =
-				ProcessMessage.GetUserMessageFromMessageFormatStringJsonRoomString(message, messageChunks,
+				ProcessMessageData.GetUserMessageFromMessageFormatStringJsonRoomString(message, messageChunks,
 					out var user);
 			SendReceivedMessage(user, messageString);
 			onMessageRecievedEvent?.Invoke((user, messageString));
@@ -261,7 +262,7 @@ namespace NetClient
 
 		private void ReceivedUserList(string message, string[] messageChunks)
 		{
-			networkUsers = ProcessMessage.GetUsersFromMessageFormatStringJsonUserList(message, messageChunks);
+			networkUsers = ProcessMessageData.GetUsersFromMessageFormatStringJsonUserList(message, messageChunks);
 			onUserListRecievedEvent?.Invoke(networkUsers);
 		}
 

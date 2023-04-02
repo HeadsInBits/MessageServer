@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace LibObjects;
 
-public static class ProcessMessage
+public static class ProcessMessageData
 {
     private static readonly Dictionary<(bool remove, string removeKey), (string remove, string replace)> SafeConvert =
         new()
@@ -70,6 +70,15 @@ public static class ProcessMessage
         userFromRoom = room.GetUserByGuid(userID);
         return roomMessageString;
     }
+    
+    //"[STRING]:[ROOM_GUID]:[USER_JSON]"
+    public static User GetUserAndGuidFromFormatStringGuidUserJson(string message, string[] messageChunks,
+        out Guid guidJoined)
+    {
+        User joinedUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2));
+        guidJoined = Guid.Parse(messageChunks[1]);
+        return joinedUser;
+    }
 
     public static string SendSafe(string messageToSend)
     {
@@ -95,11 +104,26 @@ public static class ProcessMessage
         return messageToSend;
     }
 
-    public static User GetUserAndGuidFromFormatStringGuidUserJson(string message, string[] messageChunks,
-        out Guid guidJoined)
+    public static string BuildMessageSafe(string[] toSend)
     {
-        User joinedUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2));
-        guidJoined = Guid.Parse(messageChunks[1]);
-        return joinedUser;
+        StringBuilder complete = new StringBuilder();
+        for (var index = 0; index < toSend.Length; index++)
+        {
+            var send = toSend[index];
+            complete.Append($"{SendSafe(send)}{(index==1?"":":")}");
+        }
+        return complete.ToString();
     }
+
+    public static string[] UnpackMessageSafe(string message)
+    {
+        string[] toSend = message.Split(':');
+        for (var index = 0; index < toSend.Length; index++)
+        {
+            toSend[index] = ReadSafe(toSend[index]);
+        }
+        return toSend;
+    }
+
+    
 }

@@ -94,10 +94,10 @@ public class WebSocketHandler
 								{
 									if (inRoom != userProfileFromSocketId.GetUserGuid())
 									{
-										SendMessage(user.WebSocketID, $"USERLEFTROOM:{inRoom}:{userJson}");
+										SendUserLeftRoom(user, inRoom, userJson);
 										if (isOwner)
 										{
-											SendMessage(user.WebSocketID, $"ROOMDESTROYED:{Room.GetJsonFromRoom(room)}");
+											SendRoomDestroyed(user, room);
 										}
 									}
 								}
@@ -137,7 +137,9 @@ public class WebSocketHandler
 
 		}
 	}
+
 	
+
 	private void ProcessMessage(int index, string message)
 	{
 		string [] messageChunks = message.Split(':');
@@ -149,7 +151,7 @@ public class WebSocketHandler
 
 			case "USERFROMGUID": //"USERFROMGUID:{guid.ToString()}"
 				User user = _userController.GetUserProfileFromSocketGuid(Guid.Parse(messageChunks[1]));
-				SendUserGuid(index, user);
+				SendUser(index, user);
 				break;
 			
 			case "GETMYID": //TODO: Not implemented on client maybe not needed
@@ -174,14 +176,14 @@ public class WebSocketHandler
 
 				//"SENDMESGTOALL:[USERNAME_STRING]:[MESSAGE]"
 				case "SENDMESGTOALL": //TODO: Not implemented on client
-				SendCommsToAllButSender(index, $"MESSAGETOALL:{_userController.GetUserProfileFromSocketId(index).GetUserName()}:{message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2)}");
+				SendMessageToAll(index, message, messageChunks);
 				break;
 
 			case "CREATEROOM": //"CREATEROOM:{roomSize_int}:{(isPublic?"PUBLIC":"PRIVATE")_string}:{meta_string}"
 				Room createdRoom = _roomController.CreateNewRoom(_userController.GetUserProfileFromSocketId(index), messageChunks);
 				String createdRoomJason = Room.GetJsonFromRoom(createdRoom);
-				SendMessage(index, $"ROOMCREATED:{createdRoomJason}");
-				SendMessage(index, $"ROOMJOINED:{createdRoomJason}");
+				SendRoomCreated(index, createdRoomJason);
+				SendRoomJoined(index, createdRoomJason);
 				break;
 
 			//TODO: NEEDS VALIDATION AND ERROR HANDLING
@@ -194,8 +196,8 @@ public class WebSocketHandler
 				Console.WriteLine(Guid.Parse(messageChunks[1]).ToString());
 				Console.WriteLine(User.GetJsonFromUser(userProfile));
 				_roomController.AddUserToRoom(userProfile, Guid.Parse(roomGUID));
-				SendMessage(index, $"USERJOINEDROOM:{roomGUID}:{jsonUser}");
-				SendMessage(userProfile.WebSocketID, $"ROOMJOINED:{Room.GetJsonFromRoom(userAddedToRoom)}");
+				SendUserJoinedRoom(index, roomGUID, jsonUser);
+				SendRoomJoined(userProfile, userAddedToRoom);
 				break;
 			
 			case "SENDMSGTOROOM": //"SENDMSGTOROOM:[ROOMID]:[MESSAGE]"
@@ -203,7 +205,7 @@ public class WebSocketHandler
 				Room room = _roomController.GetRoomFromGUID(guid);
 				User userMessage = _userController.GetUserProfileFromSocketId(index);
 				string messageToSend = message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2);
-				messageToSend = LibObjects.ProcessMessage.SendSafe(messageToSend);
+				messageToSend = LibObjects.ProcessMessageData.SendSafe(messageToSend);
 				Console.WriteLine();
 				foreach (var usr in _roomController.GetUsersInRoom(room.GetGuid()))
 				{
@@ -212,7 +214,7 @@ public class WebSocketHandler
 				break;
 
 			case "LISTUSERSINROOM"://TODO: Not implemented on client
-				SendUsersInRoom(index, Guid.Parse(messageChunks [1]));
+				SendUsersUsernameInRoom(index, Guid.Parse(messageChunks [1]));
 			break;
 
 			case "GETROOMLIST": //TODO: Removed on client deprecated? or implement on client
@@ -229,6 +231,7 @@ public class WebSocketHandler
 	}
 
 	
+
 
 	private User? ValidateUser(string message, int index)
 	{
@@ -277,6 +280,16 @@ public class WebSocketHandler
 			SendAuthenticationFailed(index);
 		}
 	}
+	
+	private void SendUserLeftRoom(User user, Guid inRoom, string userJson)
+	{
+		SendMessage(user.WebSocketID, $"{(int)CommunicationTypeEnum.ClientReceiveUserLeftRoom}:{inRoom}:{userJson}");
+	}
+
+	private void SendRoomDestroyed(User user, Room room)
+	{
+		SendMessage(user.WebSocketID, $"{(int)CommunicationTypeEnum.ClientReceiveRoomDestroyed}:{Room.GetJsonFromRoom(room)}");
+	}
 
 	private void SendListOfRoomGuids(int index)
 	{
@@ -294,15 +307,46 @@ public class WebSocketHandler
 					list.Add(roomList[count-1]);
 					count--;
 				}
-				SendRoomsGuidList(index, $"ROOMGUIDLISTPAGI:{sentNumber}:{count}-{count+c}", count, list);
+				SendRoomsGuidList(index, $"{(int)CommunicationTypeEnum.ClientReceiveRoomGuidListPaginated}:{sentNumber}:{count}-{count+c}", count, list);
 				sentNumber--;
 			}
 		}
 		else
 		{
-			SendRoomsGuidList(index, $"ROOMGUIDLIST:{count}", count, roomList);
+			SendRoomsGuidList(index, $"{(int)CommunicationTypeEnum.ClientReceiveRoomGuidList}:{count}", count, roomList);
 		}
 	}
+	
+	
+	
+	private void SendMessageToAll(int index, string message, string[] messageChunks)
+	{
+		SendCommsToAllButSender(index,
+			$"{(int)CommunicationTypeEnum.ClientReceiveCommunicationToAll}:{_userController.GetUserProfileFromSocketId(index).GetUserName()}:{message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2)}");
+	}
+
+	private void SendRoomCreated(int index, string createdRoomJason)
+	{
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveRoomCreated}:{createdRoomJason}");
+	}
+
+	private void SendRoomJoined(int index, string createdRoomJason)
+	{
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveJoinedRoom}:{createdRoomJason}");
+	}
+
+	private void SendRoomJoined(User userProfile, Room userAddedToRoom)
+	{
+		SendMessage(userProfile.WebSocketID, $"{(int)CommunicationTypeEnum.ClientReceiveJoinedRoom}:{Room.GetJsonFromRoom(userAddedToRoom)}");
+	}
+
+	private void SendUserJoinedRoom(int index, string roomGUID, string jsonUser)
+	{
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveUserJoinedRoom}:{roomGUID}:{jsonUser}");
+	}
+	
+	
+	
 	
 	private void SendRoomsGuidList(int index, string command, int count, List<Room> roomList)
 	{
@@ -334,7 +378,7 @@ public class WebSocketHandler
 		int sentNumber = (int)MathF.Ceiling((float)count / Room.NumberOfRoomsToSendInMessage)-1;
 		if (count > Room.NumberOfRoomsToSendInMessage)
 		{
-			string command = "ROOMLISTPAGIJSON";
+			string command = ((int)CommunicationTypeEnum.ClientReceiveUserListJson).ToString();
 			while (count > 0)
 			{
 				var list = new List<Room>();
@@ -361,7 +405,7 @@ public class WebSocketHandler
 		int sentNumber = (int)MathF.Ceiling((float)count / User.NumberOfUsersToSendInMessage)-1;
 		if (count > User.NumberOfUsersToSendInMessage)
 		{
-			string command = "USERLISTPAGIJSON";
+			CommunicationTypeEnum command = CommunicationTypeEnum.ClientReceiveUserListJsonPaginated;
 			while (count > 0)
 			{
 				var list = new List<User>();
@@ -385,7 +429,7 @@ public class WebSocketHandler
 	{
 		var returnMessage = new StringBuilder();
 		string users = User.GetJsonFromUsersList(_userController.connectedClients);
-		returnMessage.Append($"USERLIST:{users}");
+		returnMessage.Append($"{(int)CommunicationTypeEnum.ClientReceiveUserListJson}:{users}");
 		Console.WriteLine("SENDING USER LIST@@ " + returnMessage.ToString());
 		_ = Task.Run(() => SendMessage(myIndex, returnMessage.ToString()));
 	}
@@ -396,43 +440,43 @@ public class WebSocketHandler
 		User com = User.GetUserFromJson(jsonUserData);
 		foreach (var u in _userController.connectedClients) {
 			if (u.GetUserName() == com.GetUserName()) {
-				SendMessage(u.WebSocketID, $"RECIEVEMESSAGE:{jsonUserData}:{message}");
+				SendMessage(u.WebSocketID, $"{(int)CommunicationTypeEnum.ClientReceiveMessageFromUser}:{jsonUserData}:{message}");
 			}
 		}
 	}
 	
 	private void SendAuthenticationPassed(int index)
 	{
-		SendMessage(index, "AUTH:OK");
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveAuthenticated}:OK");
 	}
 
 	private void SendAuthenticationFailed(int index)
 	{
-		SendMessage(index, "AUTH:FAILED");
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveAuthenticated}:FAILED");
 	}
 	
 	private void SendRoomListJson(int index, List<Room> rooms)
 	{
-		SendMessage(index, "ROOMLIST*JSON:"+Room.GetJsonFromRoomList(rooms));
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveRoomListJson}:{Room.GetJsonFromRoomList(rooms)}");
 	}
 	
 	private void SendClientGuid(int index, User? userGUID)
 	{
-		SendMessage(index, "YOURGUID:" + userGUID.GetUserGuid());
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveYourGuid}:{userGUID.GetUserGuid()}");
 	}
 
 	private void SendClientWebSocketId(int index)
 	{
-		SendMessage(index, "IDIS:" + index);
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveYourWebsocketId}:{index}");
 	}
 
-	private void SendUserGuid(int index, User? user)
+	private void SendUser(int index, User? user)
 	{
-		SendMessage(index, $"USERGUID:{User.GetJsonFromUser(user)}");
+		SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveUserInfo}:{User.GetJsonFromUser(user)}");
 	}
-	private void SendUserListJsonPaginated(int index, string command, int sentNumber, int count, int c, List<User> list)
+	private void SendUserListJsonPaginated(int index, CommunicationTypeEnum command, int sentNumber, int count, int c, List<User> list)
 	{
-		SendMessage(index, $"{command}:{sentNumber}:{count}-{count + c}:{User.GetJsonFromUsersList(list)}");
+		SendMessage(index, $"{(int)command}:{sentNumber}:{count}-{count + c}:{User.GetJsonFromUsersList(list)}");
 	}
 	
 	//TODO:validate message is not a server command / send with message i.e. "COMMSTOALLUSERS:USER:MESSAGE"
@@ -440,16 +484,16 @@ public class WebSocketHandler
 	{
 		for (int i = 0; i < sockets.Length; i++) {
 			if (sockets [i] != null && i != index) {
-				SendMessage(index, message);
+				SendMessage(index, $"{(int)CommunicationTypeEnum.ClientReceiveCommunicationToAllButSender}:{message}");
 			}
 		}
 	}
 	
 	//TODO:Send user with message implement on the client
-	private void SendUsersInRoom(int index, Guid roomID)
+	private void SendUsersUsernameInRoom(int index, Guid roomID)
 	{
 		var msg = new StringBuilder();
-		msg.Append("ROOMUSERLIST:");
+		msg.Append((int)CommunicationTypeEnum.ClientReceiveUsernameOfUsersInRoom);
 		msg.Append(":" + _roomController.GetUsersInRoom(roomID).Count);
 		if (_roomController.GetUsersInRoom(roomID).Count > 0) {
 			foreach (var Usr in _roomController.GetUsersInRoom(roomID)) {
@@ -464,6 +508,6 @@ public class WebSocketHandler
 	
 	private void SendMessageToRoom(User usr, User? userMessage, Room room, string messageToSend)
 	{
-		SendMessage(usr.WebSocketID, $"ROOMMSG:{userMessage.GetUserGuid()}:{Room.GetJsonFromRoom(room)}:{messageToSend}");
+		SendMessage(usr.WebSocketID, $"{(int)CommunicationTypeEnum.ClientReceiveRoomMessage}:{userMessage.GetUserGuid()}:{Room.GetJsonFromRoom(room)}:{messageToSend}");
 	}
 }
