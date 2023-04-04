@@ -8,14 +8,11 @@ namespace LibObjects
 {
 	public class Room
 	{
-		class RoomJsonData
+		protected class RoomJsonData
 		{
 			public Guid RoomId;
-			public List<User> UsersInRoom;
-			public List<User> BannedList;
 			public string RoomName;
 			public bool IsRoomLocked;
-			public string RoomKey;
 			public DateTime RoomCreation;
 			public User Creator;
 			public int RoomLimit;
@@ -23,33 +20,27 @@ namespace LibObjects
 			public string Meta;
 		}
 
-		private RoomJsonData GetJsonDataFromRoom()
+		protected RoomJsonData GetJsonDataFromRoom()
 		{
 			RoomJsonData json = new RoomJsonData
 			{
 				RoomId = _roomId,
-				UsersInRoom = UsersInRoom,
-				BannedList = _bannedList,
 				RoomName = _roomName,
 				IsRoomLocked = _isRoomLocked,
-				RoomKey = _roomKey,
 				RoomCreation = _roomCreation,
 				Creator = _creator,
 				RoomLimit = _roomLimit,
 				IsPublic = _isPublic,
-				Meta = _meta
+				Meta = _meta,
 			};
 			return json;
 		}
-		
-		private Room(RoomJsonData json)
+
+		protected Room(RoomJsonData json)
 		{
 			_roomId = json.RoomId;
-			UsersInRoom = json.UsersInRoom;
-			_bannedList = json.BannedList;
 			_roomName = json.RoomName;
 			_isRoomLocked = json.IsRoomLocked;
-			_roomKey = json.RoomKey;
 			_roomCreation = json.RoomCreation;
 			_creator = json.Creator;
 			_roomLimit = json.RoomLimit;
@@ -63,24 +54,24 @@ namespace LibObjects
 			Banned,
 			RoomLocked
 		}
-
-		private readonly Guid _roomId = Guid.NewGuid();
-		private List<User> UsersInRoom = new List<User>();
-		private readonly List<User> _bannedList = new List<User>();
-		private readonly string _roomName;
-		private readonly bool _isRoomLocked;
-		private readonly string _roomKey = string.Empty;
-		private readonly DateTime _roomCreation = DateTime.Now;
-		private readonly User _creator;
-		private readonly int _roomLimit;
-		private readonly bool _isPublic;
-		private readonly string _meta;
+		
+		
+		
+		protected Guid _roomId = Guid.NewGuid();
+		protected string _roomName;
+		protected bool _isRoomLocked;
+		protected DateTime _roomCreation = DateTime.Now;
+		protected User _creator;
+		protected int _roomLimit;
+		protected bool _isPublic;
+		protected string _meta;
 		public const int NumberOfRoomsToSendInMessage = 20;
 
 		public sealed override int GetHashCode()
 		{
 			return _roomId.GetHashCode();
 		}
+		
 		
 		public static bool operator ==(Room lhs, Room rhs)
 		{
@@ -131,26 +122,9 @@ namespace LibObjects
 			return p.GetGuid() == GetGuid();
 		}
 
-
-		public Room(User creator, int roomLimit, bool isPublic, string meta)
+		protected Room()
 		{
-			_creator = creator;
-			_roomLimit = roomLimit;
-			_isPublic = isPublic;
-			UsersInRoom.Add(creator);
-			_meta = meta;
-			RoomJsonData j = GetJsonDataFromRoom();
-			Room room = new Room(j);
-			Console.WriteLine($"{GetGuid()} == {room.GetGuid()}");
-			Console.WriteLine($"{this.GetHashCode().ToString()} == {room.GetHashCode().ToString()}");
-			Console.WriteLine(this == room);
-		}
-
-
-		public List<User> GetUsersInRoom()
-		{
-			return UsersInRoom;
-
+			
 		}
 
 		public string GetRoomName()
@@ -163,45 +137,6 @@ namespace LibObjects
 			return _roomId;
 		}
 
-		public RoomStatusCodes AddUserToRoom(User usrToAdd)
-		{
-			Console.WriteLine("AddUserToRoom");
-			var ls = new StringBuilder();
-				UsersInRoom.ForEach(a => ls.Append(a._userName));
-			Console.WriteLine(ls.ToString());
-			Console.WriteLine(_isRoomLocked);
-			
-			if (_isRoomLocked || _roomLimit <= UsersInRoom.Count)
-			{
-				Console.WriteLine("room locked");
-				return RoomStatusCodes.RoomLocked;
-			}
-			Console.WriteLine("Room Not Locked");
-
-			if (!_bannedList.Contains(usrToAdd)) {
-				Console.WriteLine("user added");
-				Console.WriteLine(usrToAdd.WebSocketID);
-				UsersInRoom.Add(usrToAdd);
-				return RoomStatusCodes.Ok;
-			}
-			else {
-				Console.WriteLine("user banned");
-				return RoomStatusCodes.Banned;
-			}
-		}
-
-		public RoomStatusCodes RemoveUserFromRoom(User usrToRemove)
-		{
-			UsersInRoom.Remove(usrToRemove);
-			return RoomStatusCodes.Ok;
-		}
-
-		public RoomStatusCodes BanUserFromRoom(User usrToBan)
-		{
-			_bannedList.Add(usrToBan);
-			return RoomStatusCodes.Ok;
-		}
-		
 		//TODO: NOW SERIALISATION AND DESERIALIZATION IS HAPPENING HERE WE COULD:
 		//1. CHANGE THE FORMAT
 		//2. VALIDATE ALL IN ONE PLACE
@@ -238,18 +173,6 @@ namespace LibObjects
 		public static string GetJsonFromRoom(Room room)
 		{
 			return JsonConvert.SerializeObject(room.GetJsonDataFromRoom(), Formatting.Indented);
-		}
-
-		public User GetUserByGuid(Guid userId)
-		{
-			foreach (User user in UsersInRoom)
-			{
-				if (user.GetUserGuid() == userId)
-				{
-					return user;
-				}
-			}
-			return new User("N/A", false, Guid.Empty, -1);
 		}
 
 		public User GetCreator()

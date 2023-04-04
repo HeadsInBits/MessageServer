@@ -42,31 +42,31 @@ public partial class Form1 : Form
 
 	private void CreateRoomButton_Click(object sender, EventArgs e)
 	{
-		netClient.RequestCreateRoom("Manic", 50, true);
+		netClient.RequestCreateRoom("ChatApp", 50, true);
 	}
 
 	private void Form1_Load(object sender, EventArgs e)
 	{
-		netClient.onAuthenticateEvent += NetClient_onAuthenticateEvent;
-		netClient.onMessageRecievedEvent += NetClient_onMessageReceivedEvent;
-		netClient.onRoomCreatedEvent += NetClient_onRoomCreatedEvent;
-		netClient.onRoomJoinedEvent += NetClient_onRoomJoinedEvent;
-		netClient.onRoomListRecievedEvent += NetClient_onRoomListReceivedEvent;
-		netClient.onUserListRecievedEvent += NetClient_onUserListReceivedEvent;
-		netClient.onRoomMessageRecievedEvent += NetClient_onRoomMessageRecievedEvent;
+		netClient.onReceivedAuthenticateEvent += NetClientOnReceivedAuthenticateEvent;
+		netClient.onRecievedMessageFromUserEvent += NetClientOnRecievedMessageReceivedEvent;
+		netClient.onRecievedRoomCreatedEvent += NetClientOnRecievedRoomCreatedEvent;
+		netClient.onRecievedRoomJoinedEvent += NetClientOnRecievedRoomJoinedEvent;
+		netClient.onRecievedRoomListEvent += NetClientOnRecievedRoomListReceivedEvent;
+		netClient.onRecievedUserListEvent += NetClientOnRecievedUserListReceivedEvent;
+		netClient.onRecievedRoomMessageEvent += NetClientOnRecievedRoomMessageEvent;
 	}
 
-	private void NetClient_onRoomMessageRecievedEvent((Room room, User user, string Message) obj)
+	private void NetClientOnRecievedRoomMessageEvent((Room room, User user, string Message) obj)
 	{
 		MessageBox.Show($"Got Message from Room{obj.room.GetGuid()} :- {obj.Message}");
 	}
 
-	private void NetClient_onRoomJoinedEvent(Room obj)
+	private void NetClientOnRecievedRoomJoinedEvent(Room obj)
 	{
 		//TODO
 	}
 
-	private async void NetClient_onRoomCreatedEvent(Room obj)
+	private async void NetClientOnRecievedRoomCreatedEvent(Room obj)
 	{
 		netClient.RequestRoomList();
 
@@ -78,12 +78,12 @@ public partial class Form1 : Form
 		//throw new NotImplementedException();
 	}
 
-	private void NetClient_onMessageReceivedEvent((User user, string message) obj)
+	private void NetClientOnRecievedMessageReceivedEvent((User user, string message) obj)
 	{
 		MessageBox.Show($"Message Recieved: {obj.message}", obj.user.GetUserName());
 	}
 
-	private void NetClient_onUserListReceivedEvent(List<User> obj)
+	private void NetClientOnRecievedUserListReceivedEvent(List<User> obj)
 	{
 		UserList.Items.Clear();
 
@@ -92,7 +92,7 @@ public partial class Form1 : Form
 		}
 	}
 
-	private void NetClient_onRoomListReceivedEvent(List<Room> obj)
+	private void NetClientOnRecievedRoomListReceivedEvent(List<Room> obj)
 	{
 		RoomList.Items.Clear();
 		foreach (var room in netClient.GetLocalClientRoomList()) {
@@ -102,7 +102,7 @@ public partial class Form1 : Form
 
 
 
-	private void NetClient_onAuthenticateEvent(bool obj)
+	private void NetClientOnReceivedAuthenticateEvent(bool obj)
 	{
 
 		if (obj) {

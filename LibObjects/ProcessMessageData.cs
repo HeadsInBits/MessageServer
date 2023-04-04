@@ -4,126 +4,176 @@ using System.Text;
 using MessageServer.Data;
 using Newtonsoft.Json;
 
-namespace LibObjects;
-
-public static class ProcessMessageData
+namespace LibObjects
 {
-    private static readonly Dictionary<(bool remove, string removeKey), (string remove, string replace)> SafeConvert =
-        new()
-        {
-            { (true,":"), (":", "*/*") },
-            { (false,":"), ("*/*", ":") }
-        };
-
-    //"[STRING]:[ROOM_LIST_JSON]"
-    public static List<Room> GetRoomsListFromMessageFormatStringJsonRooms(string message, string[] messageChunks)
+    
+    public static class ProcessMessageData
     {
-        string jsonData = message.Substring(messageChunks[0].Length + 1);
+        private const string splitter = ":*:";
+        private static readonly Dictionary<string, (string remove, string replace)> SafeConvert =
+            new()
+            {
+                { splitter, (splitter, "") },
+            };
+
+        //"[STRING]:[ROOM_LIST_JSON]"
+        public static List<Room> GetRoomsListFromMessageFormatStringJsonRooms(string[] messageChunks)
+        {
+            string jsonData = messageChunks[1];
+            List<Room> jsonDe = Room.GetRoomListFromJson(jsonData);
+            return jsonDe;
+        }
+
+        //"[STRING]:[USER_JSON]:[STRING]"
+        public static string GetUserMessageFromMessageFormatStringJsonRoomString(string[] messageChunks, out User user)
+        {
+            var messageString = messageChunks[2];
+            string jsonStrUser = messageChunks[1];
+            user = User.GetUserFromJson(jsonStrUser);
+            return messageString;
+        }
         
-        List<Room> jsonDe = Room.GetRoomListFromJson(jsonData);
-        return jsonDe;
-    }
-
-    //"[STRING]:[USER_JSON]:[STRING]"
-    public static string GetUserMessageFromMessageFormatStringJsonRoomString(string message,
-        string[] messageChunks, out User user)
-    {
-        var messageString = messageChunks[messageChunks.Length-1];
-        string jsonStrUser = message.Substring(messageChunks[0].Length + 1,
-            message.Length - (messageString.Length + messageChunks[0].Length + 2));
-        user = User.GetUserFromJson(jsonStrUser);
-        return messageString;
-    }
-
-    //"[STRING]:[USER_LIST_JSON]"
-    public static List<User> GetUsersFromMessageFormatStringJsonUserList(string message, string[] messageChunks)
-    {
-        string jsonStrUsers = message.Substring(messageChunks[0].Length + 1);
-        return User.GetUsersListFromJson(jsonStrUsers);
-    }
-    
-    //"[STRING]:[USER_JSON]"
-    public static User GetUserFromMessageFormatStringJsonUser(string message, string[] messageChunks)
-    {
-        string users = message.Substring(messageChunks[0].Length + 1);
-        return User.GetUserFromJson(users);
-    }
-
-    //"[STRING]:[ROOM_JSON] 
-    public static Room GetRoomFromMessageFormatStringRoom(string message, string[] messageChunks)
-    {
-        string jsonString = message.Substring(messageChunks[0].Length + 1);
-        Room room = Room.GetRoomFromJson(jsonString);
-        return room;
-    }
-    
-    //"[STRING]:[UserID_GUID]:[ROOM_JSON]:[MESSAGE_STRING]"
-    public static string GetRoomUserAndMessageFromFormatStringGuidRoomJsonMessage(string message,
-        string[] messageChunks, out Room room, out User userFromRoom)
-    {
-        Guid userID = Guid.Parse(messageChunks[1]);
-        string roomMessageString = messageChunks[messageChunks.Length-1];
-        roomMessageString = ReadSafe(roomMessageString);
-        string jsonStrRoom = message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2,
-            message.Length - ( messageChunks[messageChunks.Length-1].Length + messageChunks[1].Length  + messageChunks[0].Length + 3));
-        room = Room.GetRoomFromJson(jsonStrRoom);
-        userFromRoom = room.GetUserByGuid(userID);
-        return roomMessageString;
-    }
-    
-    //"[STRING]:[ROOM_GUID]:[USER_JSON]"
-    public static User GetUserAndGuidFromFormatStringGuidUserJson(string message, string[] messageChunks,
-        out Guid guidJoined)
-    {
-        User joinedUser = User.GetUserFromJson(message.Substring(messageChunks[0].Length + messageChunks[1].Length + 2));
-        guidJoined = Guid.Parse(messageChunks[1]);
-        return joinedUser;
-    }
-
-    public static string SendSafe(string messageToSend)
-    {
-        var key = (true,":");
-        messageToSend = ReplaceByKey(messageToSend, key);
-        return messageToSend;
-    }
-
-    public static string ReplaceByKey(string messageToSend, (bool remove, string removeKey) key)
-    {
-        while (messageToSend.Contains(SafeConvert[key].replace))
+        //"[STRING]:[ROOM_JSON]:[STRING]"
+        public static string GetRoomAndMessageFromMessageFormatStringJsonRoomString(
+            string[] messageChunks, out Room room)
         {
-            messageToSend = messageToSend.Replace(SafeConvert[key].replace, "");
+            var messageString = messageChunks[2];
+            room = Room.GetRoomFromJson(messageChunks[1]);
+            return messageString;
         }
-        messageToSend = messageToSend.Replace(SafeConvert[key].remove, SafeConvert[key].replace);
-        return messageToSend;
-    }
 
-    public static string ReadSafe(string messageToSend)
-    {
-        var key = (false,":");
-        messageToSend = ReplaceByKey(messageToSend, key);
-        return messageToSend;
-    }
-
-    public static string BuildMessageSafe(string[] toSend)
-    {
-        StringBuilder complete = new StringBuilder();
-        for (var index = 0; index < toSend.Length; index++)
+        //"[STRING]:[USER_LIST_JSON]"
+        public static List<User> GetUsersFromMessageFormatStringJsonUserList(string[] messageChunks)
         {
-            var send = toSend[index];
-            complete.Append($"{SendSafe(send)}{(index==1?"":":")}");
+            string jsonStrUsers = messageChunks[1];
+            return User.GetUsersListFromJson(jsonStrUsers);
         }
-        return complete.ToString();
-    }
-
-    public static string[] UnpackMessageSafe(string message)
-    {
-        string[] toSend = message.Split(':');
-        for (var index = 0; index < toSend.Length; index++)
+        
+        //"[STRING]:[USER_JSON]"
+        public static User GetUserFromMessageFormatStringJsonUser(string[] messageChunks)
         {
-            toSend[index] = ReadSafe(toSend[index]);
+            string users = messageChunks[1];
+            return User.GetUserFromJson(users);
         }
-        return toSend;
+
+        //"[STRING]:[ROOM_JSON] 
+        public static Room GetRoomFromMessageFormatStringRoom(string[] messageChunks)
+        {
+            string jsonString = messageChunks[1];
+            Room room = Room.GetRoomFromJson(jsonString);
+            return room;
+        }
+        
+        //"[STRING]:[UserID_GUID]:[ROOM_JSON]:[MESSAGE_STRING]"
+        public static string GetRoomUserAndMessageFromFormatStringUserJsonRoomJsonMessage( string[] messageChunks, out Room room, out User userFromRoom)
+        {
+            userFromRoom = User.GetUserFromJson(messageChunks[1]);
+            string roomMessageString = messageChunks[3];
+            string jsonStrRoom = messageChunks[2];
+            room = Room.GetRoomFromJson(jsonStrRoom);
+            return roomMessageString;
+        }
+        
+        //"[STRING]:[ROOM_GUID]:[USER_JSON]"
+        public static User GetUserAndGuidFromFormatStringGuidUserJson(string[] messageChunks,
+            out Guid guidJoined)
+        {
+            User joinedUser = User.GetUserFromJson(messageChunks[2]);
+            guidJoined = Guid.Parse(messageChunks[1]);
+            return joinedUser;
+        }
+        
+        //"[STRING]:[ROOM_GUID]:[USER_LIST_JSON]"
+        public static List<User> GetUserListAndRoomGuidFromFormatStringGuidUserListJson(string[] messageChunks,
+            out Guid guidRoom)
+        {
+            List<User> users = User.GetUsersListFromJson(messageChunks[2]);
+            guidRoom = Guid.Parse(messageChunks[1]);
+            return users;
+        }
+        
+        //"[STRING]:[INT]:[STRING]:[USERS_LIST_JSON]"
+        public static int ExtractPageAndUsersFromFormatStringIntStringUserListJson(string[] messageChunks, out List<User> tmUsers)
+        {
+            int page = Int32.Parse(messageChunks[1]);
+            string json = messageChunks[3];
+            tmUsers = User.GetUsersListFromJson(json);
+            return page;
+        }
+        
+        //"[STRING]:[INT]:[STRING]:[ROOMS_LIST_JSON]"
+        public static int ExtractPageAndUsersFromFormatStringIntStringRoomListJson(string[] messageChunks, out List<Room> tmRooms)
+        {
+            int page = Int32.Parse(messageChunks[1]);
+            string json = messageChunks[3];
+            tmRooms = Room.GetRoomListFromJson(json);
+            return page;
+        }
+
+        private static string SendSafe(string messageToSend)
+        {
+            messageToSend = ReplaceByKey(messageToSend, splitter, false);
+            return messageToSend;
+        }
+
+       public static string ReplaceByKey(string message, string key, bool undo)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            return message;
+        }
+
+        // Get the values from the SafeConvert dictionary
+        string oldValue = undo ? SafeConvert[key].remove : SafeConvert[key].replace;
+        string newValue = undo ? SafeConvert[key].replace : SafeConvert[key].remove;
+
+        // If oldValue is empty, return the original message
+        if (string.IsNullOrEmpty(oldValue))
+        {
+            return message;
+        }
+
+        // Replace oldValue with newValue in the message
+        message = message.Replace(oldValue, "");
+        
+        // If newValue is empty, return the original message
+        if (string.IsNullOrEmpty(newValue))
+        {
+            return message;
+        }
+        message = message.Replace(newValue, oldValue);
+
+        return message;
     }
 
-    
+        private static string ReadSafe(string messageToSend)
+        {
+            messageToSend = ReplaceByKey(messageToSend, splitter, true);
+            return messageToSend;
+        }
+
+        public static string BuildMessageSafe(string[] toSend)
+        {
+            StringBuilder complete = new StringBuilder();
+            for (var index = 0; index < toSend.Length; index++)
+            {
+                var send = toSend[index];
+                complete.Append($"{SendSafe(send)}{(index==toSend.Length-1?"":splitter)}");
+            }
+            return complete.ToString();
+        }
+
+        public static string[] UnpackMessageSafe(string message)
+        {
+            string[] toSend = message.Split(new string[] {splitter}, StringSplitOptions.None);
+            for (var index = 0; index < toSend.Length; index++)
+            {
+                toSend[index] = ReadSafe(toSend[index]);
+            }
+            return toSend;
+        }
+
+
+        
+    }
 }

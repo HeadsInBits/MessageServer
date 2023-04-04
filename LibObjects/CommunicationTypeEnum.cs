@@ -5,55 +5,49 @@ namespace LibObjects
         /// <summary>
         /// MessageFromServer
         /// </summary>
-        ClientReceiveRoomMessage, //implemented on client & server
-        ClientReceiveUserInfo, //implemented on client & server
-        ClientReceiveYourGuid, //implemented on client & server
-        ClientReceiveRoomListJson, //implemented on client & server
-        ClientReceiveAuthenticated, //implemented on client & server
-        ClientReceiveMessageFromUser, //implemented on client & server
-        ClientReceiveUserListJson, //implemented on client & server
-        ClientReceiveUserListJsonPaginated, //implemented on client & server
-        ClientReceiveRoomListJsonPaginated, //implemented on client & server
-        ClientReceiveRoomDestroyed, //implemented on client & server
-        ClientReceiveRoomCreated, //implemented on client
-        ClientReceiveJoinedRoom, //implemented on client & server
-        ClientReceiveUserJoinedRoom, //implemented on client & server
-        ClientReceiveUserLeftRoom, //implemented on client & server
-        ClientReceiveMessageSentSuccessful, //implemented on client & server
+        ClientReceiveRoomMessage = 0, //implemented on client & server
+        ClientReceiveUserInfo = 1, //implemented on client & server
+        ClientReceiveYourGuid = 2, //implemented on client & server
+        ClientReceiveRoomListJson = 3, //implemented on client & server
+        ClientReceiveAuthenticated = 4, //implemented on client & server
+        ClientReceiveMessageFromUser = 5, //implemented on client & server
+        ClientReceiveUserListJson = 6, //implemented on client & server
+        ClientReceiveUserListJsonPaginated = 7, //implemented on client & server
+        ClientReceiveRoomListJsonPaginated = 8, //implemented on client & server
+        ClientReceiveRoomDestroyed = 9, //implemented on client & server
+        ClientReceiveRoomCreated = 10, //implemented on client
+        ClientReceiveJoinedRoom = 11, //implemented on client & server
+        ClientReceiveUserJoinedRoom = 12, //implemented on client & server
+        ClientReceiveUserLeftRoom = 13, //implemented on client & server
+        ClientReceiveMessageSentSuccessful = 14, //implemented on client & server
+        ClientReceiveUsersListJsonInRoom = 15, // implemented on client & server
+        ClientReceiveCommunicationToAllButSender = 16, // implemented on client & server
+        ClientReceiveCommunicationToAll = 17, // implemented on client & server
+        ClientReceiveErrorResponseFromServer = 18, // implemented on client
+        
         
         //TODO:
-        ClientReceiveUsernameOfUsersInRoom, // implemented on server
-        ClientReceiveCommunicationToAllButSender, // implemented on server
-        ClientReceiveCommunicationToAll, // implemented on server
-        ClientReceiveYourWebsocketId, // implemented on server
-        ClientReceiveRoomGuidListPaginated, //implemented on server
-        ClientReceiveRoomGuidList, //implemented on server
-        ClientReceiveMessageToUserInRoomFromRoomHost,
-        ClientReceiveMessageToAllUsersInRoomFromRoomHost,
-        ClientReceiveMessageFromUserInRoomToRoomHost,
-        
-        
+        ClientReceiveYourWebsocketId = 19, // implemented on server
+
+
         /// <summary>
         /// MessageFromClient
         /// </summary>
-        ServerReceiveAuthenticate, //implemented on client & server
-        ServerReceiveRequestSendMessageToUser, //implemented on client & server
-        ServerReceiveRequestUserFromGuid, //implemented on client
-        ServerReceiveRequestClientGuid, //implemented on client & server
-        ServerReceiveRequestCreateRoom, //implemented on client & server
-        ServerReceiveRequestAddUserRoom, //implemented on client & server
-        ServerReceiveSendMessageToRoom, //implemented on client & server
-        ServerReceiveRequestUserListJson, //implemented on client & server
-        ServerReceiveRequestRoomListJson, //implemented on client  & server
-        ServerReceiveMessageReceivedSuccessfully, //implemented on client & server
+        ServerReceiveAuthenticate = 20, //implemented on client & server
+        ServerReceiveRequestSendMessageToUser = 21, //implemented on client & server
+        ServerReceiveRequestUserFromGuid = 22, //implemented on client & server
+        ServerReceiveRequestClientGuid = 23, //implemented on client & server
+        ServerReceiveRequestCreateRoom = 24, //implemented on client & server
+        ServerReceiveRequestAddUserRoom = 25, //implemented on client & server
+        ServerReceiveSendMessageToRoom = 26, //implemented on client & server
+        ServerReceiveRequestUserListJson = 27, //implemented on client & server
+        ServerReceiveRequestRoomListJson = 28, //implemented on client  & server
+        ServerReceiveMessageReceivedSuccessfully = 29, //implemented on client & server
+        ServerReceiveRequestSendMessageToAll = 30, //implemented on client & server 
+        ServerReceiveRequestUsersListJsonInRoom = 31, //implemented on client & server
 
         //TODO:
-        ServerReceiveRequestClientWebSocketId, //implemented on server 
-        ServerReceiveRequestSendMessageToAll, //implemented on server 
-        ServerReceiveRequestUsernamesInRoom, //implemented on server
-        ServerReceiveRequestRoomGuidList, //implemented on server
-        ServerReceiveMessageToUserInRoomFromRoomHost,
-        ServerReceiveMessageToAllUsersInRoomFromRoomHost,
-        ServerReceiveMessageFromUserInRoomToRoomHost,
+        ServerReceiveRequestClientWebSocketId = 32, //implemented on server 
+
     }
 }

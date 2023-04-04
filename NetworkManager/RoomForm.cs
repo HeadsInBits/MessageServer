@@ -1,14 +1,4 @@
-﻿using MessageServer.Data;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using LibObjects;
+﻿using LibObjects;
 
 namespace NetworkManager
 {
@@ -38,7 +28,7 @@ namespace NetworkManager
 
 		private void SendMessageButton_Click(object sender, EventArgs e)
 		{
-			myClient.SendMessageToRoomAsync(RoomID, MessageInput.Text);
+			myClient.RequestSendMessageToRoomAsync(RoomID, MessageInput.Text);
 		}
 	}
 }

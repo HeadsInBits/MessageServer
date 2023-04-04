@@ -8,90 +8,110 @@ namespace MessageServer.Models;
 
 public class RoomController
 {
-	private Dictionary<Guid,Room> RoomDictionary = new Dictionary<Guid, Room>();
+	private Dictionary<Guid,ServerRoom> ServerRoomDictionary = new Dictionary<Guid, ServerRoom>();
 
-	public Room CreateNewRoom(User roomCreator, string [] messageChunks)
+	public ServerRoom CreateNewServerRoom(User ServerRoomCreator, string [] messageChunks)
 	{
-		Room tmpRoom = new Room(roomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", messageChunks [3]);
-		RoomDictionary.Add(tmpRoom.GetGuid(), tmpRoom);
-		return tmpRoom;
+		ServerRoom tmpServerRoom = new ServerRoom(ServerRoomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", messageChunks [3],"");
+		ServerRoomDictionary.Add(tmpServerRoom.GetGuid(), tmpServerRoom);
+		return tmpServerRoom;
 	}
 
-	public List<User> GetUsersInRoom(Guid roomId)
+	public List<User> GetUsersInServerRoom(Guid ServerRoomId)
 	{
-		return RoomDictionary [roomId].GetUsersInRoom();
+		return ServerRoomDictionary [ServerRoomId].GetUsersInRoom();
 	}
-	public List<Guid> FindAllRoomsWhereUserInRoom(User user)
+	public List<Guid> FindAllServerRoomsWhereUserInServerRoom(User user)
 	{
 		int counter = 0;
 
-		List<Guid> roomList = new List<Guid>();
+		List<Guid> ServerRoomList = new List<Guid>();
 
-		foreach (var pair in RoomDictionary) {
+		foreach (var pair in ServerRoomDictionary) {
 			foreach (var usr in pair.Value.GetUsersInRoom()) {
 				if (usr == user) {
-					roomList.Add(pair.Key);
+					ServerRoomList.Add(pair.Key);
 				}
 			}
 			counter++;
 		}
-		return roomList;
+		return ServerRoomList;
 	}
 
-	public Dictionary<Guid, Room> GetRoomDictionary()
+	public Dictionary<Guid, ServerRoom> GetServerRoomDictionary()
 	{
-		return RoomDictionary;
+		return ServerRoomDictionary;
 	}
 
-	public string JSONGetRoomList()
+	public string JSONGetServerRoomList()
 	{
-		var rooms = GetRoomsList();
-		string output = Room.GetJsonFromRoomList(rooms);
+		List<Room> Rooms = GetRoomsList();
+		string output = Room.GetJsonFromRoomList(Rooms);
 		return output;
 	}
 
+	public List<ServerRoom> GetServerRoomsList()
+	{
+		List<ServerRoom> ServerRooms = new List<ServerRoom>();
+		foreach (var pair in ServerRoomDictionary)
+		{
+			ServerRooms.Add(pair.Value);
+		}
+		return ServerRooms;
+	}
+	
 	public List<Room> GetRoomsList()
 	{
-		List<Room> rooms = new List<Room>();
-		foreach (var pair in RoomDictionary)
+		List<Room> Rooms = new List<Room>();
+		foreach (var pair in ServerRoomDictionary)
 		{
-			rooms.Add(pair.Value);
+			Rooms.Add(pair.Value);
 		}
 
-		return rooms;
+		return Rooms;
 	}
 
 
-	public Room.RoomStatusCodes AddUserToRoom(User userToAdd, Guid roomNumber)
+	public ServerRoom.RoomStatusCodes AddUserToServerRoom(User userToAdd, Guid ServerRoomNumber)
 	{
-		if (RoomDictionary.ContainsKey(roomNumber))
+		if (ServerRoomDictionary.ContainsKey(ServerRoomNumber))
 		{
-			Console.WriteLine($"User {userToAdd.GetUserName()} added to room {roomNumber}");
-			Room room = RoomDictionary [roomNumber];
-			var addUserToRoom = room.AddUserToRoom(userToAdd);
-			return addUserToRoom;
+			Console.WriteLine($"User {userToAdd.GetUserName()} added to ServerRoom {ServerRoomNumber}");
+			ServerRoom ServerRoom = ServerRoomDictionary [ServerRoomNumber];
+			var addUserToServerRoom = ServerRoom.AddUserToRoom(userToAdd);
+			return addUserToServerRoom;
 			
 		}
 		else
 		{
-			throw new Exception($"Room {roomNumber} doent exist");
+			throw new Exception($"ServerRoom {ServerRoomNumber} doent exist");
 		}
 	}
 
-	public void DestroyRoom(Guid index)
+	public void DestroyServerRoom(Guid index)
 	{
-		RoomDictionary.Remove(index);
+		ServerRoomDictionary.Remove(index);
 	}
 
-	public Room GetRoomFromGUID(Guid guid)
+	public ServerRoom GetServerRoomFromGUID(Guid guid)
 	{
-		if (RoomDictionary.ContainsKey(guid))
+		if (ServerRoomDictionary.ContainsKey(guid))
 		{
-			return RoomDictionary[guid];
+			return ServerRoomDictionary[guid];
 		}
 		else
 		{
-			throw new Exception("room doesnt exist");
+			throw new Exception("ServerRoom doesnt exist");
 		}
+	}
+
+	public void RemoveUserFromServerRoom(User user, Room room)
+	{
+		ServerRoomDictionary[room.GetGuid()].RemoveUserFromRoom(user);
+	}
+
+	public List<User> GetUsersInRoom(Room room)
+	{
+		return ServerRoomDictionary[room.GetGuid()].GetUsersInRoom();
 	}
 }
