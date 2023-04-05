@@ -25,12 +25,21 @@ namespace LibObjects
         }
 
         //"[STRING]:[USER_JSON]:[STRING]"
-        public static string GetUserMessageFromMessageFormatStringJsonRoomString(string[] messageChunks, out User user)
+        public static string GetUserMessageFromMessageFormatStringJsonUserString(string[] messageChunks, out User user)
         {
             var messageString = messageChunks[2];
             string jsonStrUser = messageChunks[1];
             user = User.GetUserFromJson(jsonStrUser);
             return messageString;
+        }
+        
+        //"[STRING]:[USER_JSON]:[ROOM_JSON]"
+        public static Room GetUserRoomFromMessageFormatStringJsonUserJsonRoom(string[] messageChunks, out User user)
+        {
+            Room fromJson = Room.GetRoomFromJson(messageChunks[2]);
+            string jsonStrUser = messageChunks[1];
+            user = User.GetUserFromJson(jsonStrUser);
+            return fromJson;
         }
         
         //"[STRING]:[ROOM_JSON]:[STRING]"
@@ -57,7 +66,7 @@ namespace LibObjects
         }
 
         //"[STRING]:[ROOM_JSON] 
-        public static Room GetRoomFromMessageFormatStringRoom(string[] messageChunks)
+        public static Room GetRoomFromMessageFormatStringRoomJson(string[] messageChunks)
         {
             string jsonString = messageChunks[1];
             Room room = Room.GetRoomFromJson(jsonString);
@@ -92,8 +101,17 @@ namespace LibObjects
             return users;
         }
         
+        //"[STRING]:[ROOM_JSON]:[USER_LIST_JSON]"
+        public static List<User> GetUserListAndRoomFromFormatStringRoomJsonUserListJson(string[] messageChunks,
+            out Room room)
+        {
+            List<User> users = User.GetUsersListFromJson(messageChunks[2]);
+            room = Room.GetRoomFromJson(messageChunks[1]);
+            return users;
+        }
+        
         //"[STRING]:[INT]:[STRING]:[USERS_LIST_JSON]"
-        public static int ExtractPageAndUsersFromFormatStringIntStringUserListJson(string[] messageChunks, out List<User> tmUsers)
+        public static int GetPageAndUsersFromFormatStringIntStringUserListJson(string[] messageChunks, out List<User> tmUsers)
         {
             int page = Int32.Parse(messageChunks[1]);
             string json = messageChunks[3];
@@ -101,8 +119,19 @@ namespace LibObjects
             return page;
         }
         
+        //"[STRING]:[INT]:[STRING]:[USERS_LIST_JSON][ROOM_JSON]"
+        public static int GetPageRoomAndUsersFromFormatStringIntStringUserListJsonRoomJson(string[] messageChunks, 
+            out List<User> tmUsers, out Room room)
+        {
+            int page = Int32.Parse(messageChunks[1]);
+            string json = messageChunks[3];
+            tmUsers = User.GetUsersListFromJson(json);
+            room = Room.GetRoomFromJson(messageChunks[4]);
+            return page;
+        }
+        
         //"[STRING]:[INT]:[STRING]:[ROOMS_LIST_JSON]"
-        public static int ExtractPageAndUsersFromFormatStringIntStringRoomListJson(string[] messageChunks, out List<Room> tmRooms)
+        public static int GetPageAndUsersFromFormatStringIntStringRoomListJson(string[] messageChunks, out List<Room> tmRooms)
         {
             int page = Int32.Parse(messageChunks[1]);
             string json = messageChunks[3];
@@ -124,24 +153,24 @@ namespace LibObjects
         }
 
         // Get the values from the SafeConvert dictionary
-        string oldValue = undo ? SafeConvert[key].remove : SafeConvert[key].replace;
-        string newValue = undo ? SafeConvert[key].replace : SafeConvert[key].remove;
+        string newValue = undo ? SafeConvert[key].remove : SafeConvert[key].replace;
+        string oldValue = undo ? SafeConvert[key].replace : SafeConvert[key].remove;
 
         // If oldValue is empty, return the original message
-        if (string.IsNullOrEmpty(oldValue))
+        if (string.IsNullOrEmpty(newValue))
         {
             return message;
         }
 
         // Replace oldValue with newValue in the message
-        message = message.Replace(oldValue, "");
+        message = message.Replace(newValue, "");
         
         // If newValue is empty, return the original message
-        if (string.IsNullOrEmpty(newValue))
+        if (string.IsNullOrEmpty(oldValue))
         {
             return message;
         }
-        message = message.Replace(newValue, oldValue);
+        message = message.Replace(oldValue, newValue);
 
         return message;
     }

@@ -52,7 +52,10 @@ namespace LibObjects
 		{
 			Ok,
 			Banned,
-			RoomLocked
+			RoomLocked,
+			Full,
+			AlreadyJoined,
+			Private
 		}
 		
 		

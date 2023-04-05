@@ -42,7 +42,7 @@ public partial class Form1 : Form
 
 	private void CreateRoomButton_Click(object sender, EventArgs e)
 	{
-		netClient.RequestCreateRoom("ChatApp", 50, true);
+		netClient.RequestCreateRoom("ChatApp", 50, true, "MyRoom");
 	}
 
 	private void Form1_Load(object sender, EventArgs e)

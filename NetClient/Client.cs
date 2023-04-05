@@ -19,6 +19,7 @@ namespace NetClient
 		private List<Room> roomList = new List<Room>();
 		private List<Room> tmRoomsList = new List<Room>();
 		private List<User> tmUsersList = new List<User>();
+		private Dictionary<Guid, List<User>> tmRoomsUsersListDictionary = new Dictionary<Guid, List<User>>();
 		private List<Room> subscribedRooms = new List<Room>();
 		private bool DisconnectOnFailAuthentication = false;
 		private bool handlingUserPationation = false;
@@ -36,12 +37,12 @@ namespace NetClient
 		public event Action<Room> onRecievedRoomCreatedEvent;
 		public event Action<Room> onRecievedRoomJoinedEvent;
 		public event Action<(Room room, User user, string Message)> onRecievedRoomMessageEvent;
-		public event Action<(Guid guidRoom, List<User> users)> onReceivedUsersListInRoomEvent;
+		public event Action<(Room room, List<User> users)> onReceivedUsersListInRoomEvent;
 		public event Action<(User user, string messageSent)> onReceivedCommunicationToAllButSenderEvent;
 		public event Action<(User user, string messageSent)> onReceivedMessageWasReceivedByUserEvent;
 		public event Action<(User user, string messageSent)> onReceivedCommunicationToAllEvent;
 
-		public event Action<string> onReceivedErrorResponseFromServer;
+		public event Action<(CommunicationTypeEnum comEnum, string message)> onReceivedErrorResponseFromServer;
 		public event Action<Guid> onRecievedGuidEvent;
 		public event Action<(User user, Guid guid)> onRecievedUserWithGuidEvent;
 		
@@ -134,81 +135,106 @@ namespace NetClient
 
 			var s = (CommunicationTypeEnum)int.Parse(messageChunks [0]);
 			switch (s) {
-				case CommunicationTypeEnum.ClientReceiveAuthenticated: //"[ClientReceiveAuthenticated]:OK" / "[ClientReceiveAuthenticated]:FAILED"
+				
+				//"[ClientReceiveAuthenticated]:OK" / "[ClientReceiveAuthenticated]:FAILED"
+				case CommunicationTypeEnum.ClientReceiveAuthenticated: 
 					if (!ReceivedAuthenticate(messageChunks))
 						return false;
 					else
 						break;
 
-				case CommunicationTypeEnum.ClientReceiveMessageSentSuccessful: //"[ClientReceiveMessageSentSuccessful]:[USER_JSON]:[MESSAGE_STRING]"
+				//"[ClientReceiveMessageSentSuccessful]:[USER_JSON]:[MESSAGE_STRING]"
+				case CommunicationTypeEnum.ClientReceiveMessageSentSuccessful: 
 					ReceivedMessageWasReceivedByUser(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveYourGuid: //"[ClientReceiveYourGuid]:[USERID_GUID]"
+				//"[ClientReceiveYourGuid]:[USERID_GUID]"
+				case CommunicationTypeEnum.ClientReceiveYourGuid: 
 					ReceivedClientGuid(messageChunks);
 					break;
 
-				case CommunicationTypeEnum.ClientReceiveUserListJson: //"[ClientReceiveUserListJson]:[USERS_JSON]"
+				//"[ClientReceiveUserListJson]:[USERS_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserListJson: 
 					ReceivedUserList(messageChunks);
 					break;
 
-				case CommunicationTypeEnum.ClientReceiveMessageFromUser: //"[ClientReceiveMessageFromUser]:[USER_JSON]:[MESSAGE_STRING]"
+				//"[ClientReceiveMessageFromUser]:[USER_JSON]:[MESSAGE_STRING]"
+				case CommunicationTypeEnum.ClientReceiveMessageFromUser: 
 					ReceivedMessage(messageChunks);
 					break;
 
-				case CommunicationTypeEnum.ClientReceiveRoomListJson: //"[ClientReceiveRoomListJson]:[ROOMS_LIST_JSON]"
+				//"[ClientReceiveRoomListJson]:[ROOMS_LIST_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomListJson: 
 					ReceivedRoomListJson(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveRoomListJsonPaginated: //"[ClientReceiveRoomListJsonPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[ROOMS_JSON]"
+				//"[ClientReceiveRoomListJsonPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[ROOMS_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomListJsonPaginated: 
 					ReceivedPaginatedRoomJsonDataMessage(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveUserListJsonPaginated: //"[ClientReceiveUserListJsonPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]"
+				//"[ClientReceiveUserListJsonPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserListJsonPaginated: 
 					ReceivedPaginatedUserJsonDataMessage(messageChunks);
 					break;
 
-				case CommunicationTypeEnum.ClientReceiveJoinedRoom: //"[ClientReceiveJoinedRoom]:[ROOM_JSON] 
+				//"[ClientReceiveJoinedRoom]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveJoinedRoom: 
 					ReceivedRoomJoined(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveRoomDestroyed: //"[ClientReceiveRoomDestroyed]:[ROOM_JSON] 
+				//"[ClientReceiveRoomDestroyed]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveRoomDestroyed: 
 					ReceivedRoomDestroyed(messageChunks);
 					break;
 
-				case CommunicationTypeEnum.ClientReceiveRoomCreated: //"[ClientReceiveRoomCreated]:[ROOM_JSON] 
+				//"[ClientReceiveRoomCreated]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveRoomCreated: 
 					ReceivedRoomCreated(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveRoomMessage: //"[ClientReceiveRoomMessage]:[UserID_GUID]:[ROOM_JSON]:[MESSAGE_STRING]"
+				//"[ClientReceiveRoomMessage]:[UserID_GUID]:[ROOM_JSON]:[MESSAGE_STRING]"
+				case CommunicationTypeEnum.ClientReceiveRoomMessage: 
 					ReceivedRoomMessage(messageChunks);
 					break;
 
-				case CommunicationTypeEnum.ClientReceiveUserJoinedRoom: //"[ClientReceiveUserJoinedRoom]:[ROOM_GUID]:[USER_JSON]"
+				//"[ClientReceiveUserJoinedRoom]:[ROOM_GUID]:[USER_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserJoinedRoom: 
 					ReceivedUserJoinedRoom(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveUserLeftRoom: //"[ClientReceiveUserLeftRoom]:[ROOM_GUID]:[USER_JSON]"
+				//"[ClientReceiveUserLeftRoom]:[ROOM_GUID]:[USER_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserLeftRoom: 
 					ReceivedUserLeftRoom(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveUserInfo: //"[ClientReceiveUserInfo]:[User_Json]"
+				//"[ClientReceiveUserInfo]:[USER_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserInfo: 
 					ReceivedUserInfo(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom: //"[ClientReceiveUsersListJsonInRoom]:[ROOM_GUID]:[USER_LIST_JSON]"
+				//"[ClientReceiveUsersListJsonInRoom]:[ROOM_GUID]:[USER_LIST_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom: 
 					ReceivedUsersInRoom(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveCommunicationToAllButSender: //"[ClientReceiveCommunicationToAllButSender]:[USER_JSON]:[MESSAGE]"
+				//"[ClientReceiveUsersListJsonInRoomPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]:[ROOM_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUsersListJsonInRoomPaginated: 
+					ReceivedUsersInRoomPaginated(messageChunks);
+					break;
+				
+				//"[ClientReceiveCommunicationToAllButSender]:[USER_JSON]:[MESSAGE]"
+				case CommunicationTypeEnum.ClientReceiveCommunicationToAllButSender: 
 					ReceivedCommunicationToAllButSender(messageChunks);
 					break;
 				
-				case CommunicationTypeEnum.ClientReceiveCommunicationToAll: //"[ClientReceiveCommunicationToAllButSender]:[USER_JSON]:[MESSAGE]"
+				//"[ClientReceiveCommunicationToAllButSender]:[USER_JSON]:[MESSAGE]"
+				case CommunicationTypeEnum.ClientReceiveCommunicationToAll: 
 					ReceivedCommunicationToAll(messageChunks);
 					break;
 
-				case CommunicationTypeEnum.ClientReceiveErrorResponseFromServer: //"[ClientReceiveMessageToAllUsersInRoomFromRoomHost]:[ROOM_JSON]:[MESSAGE]"
+				//"[ClientReceiveErrorResponseFromServer]:[CommunicationTypeEnum]:[MESSAGE]"
+				case CommunicationTypeEnum.ClientReceiveErrorResponseFromServer: 
 					ReceivedErrorResponseFromServer(messageChunks);
 					break;
 
@@ -221,21 +247,43 @@ namespace NetClient
 
 		}
 
+		private void ReceivedUsersInRoomPaginated(string[] messageChunks)
+		{
+			handlingUserPationation = true;
+			
+			var page = ProcessMessageData.GetPageRoomAndUsersFromFormatStringIntStringUserListJsonRoomJson(messageChunks, 
+				out var tmUsers, out Room room);
+			if (tmRoomsUsersListDictionary.ContainsKey(room.GetGuid()))
+			{
+				tmRoomsUsersListDictionary[room.GetGuid()].AddRange(tmUsers);
+			}
+			else
+			{
+				tmRoomsUsersListDictionary.Add(room.GetGuid(),tmUsers);
+			}
+			if (page == 0)
+			{
+				onReceivedUsersListInRoomEvent?.Invoke((room, tmRoomsUsersListDictionary[room.GetGuid()]));
+				tmRoomsUsersListDictionary.Remove(room.GetGuid());
+				handlingUserPationation = false;
+			}
+		}
+
 		private void ReceivedErrorResponseFromServer(string[] messageChunks)
 		{
-			onReceivedErrorResponseFromServer?.Invoke(messageChunks[1]);
+			onReceivedErrorResponseFromServer?.Invoke(((CommunicationTypeEnum)int.Parse(messageChunks [1]),messageChunks[2]));
 		}
 
 		private void ReceivedCommunicationToAll(string[] messageChunks)
 		{
-			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonRoomString(messageChunks,
+			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString(messageChunks,
 				out User user);
 			onReceivedCommunicationToAllEvent?.Invoke((user, messageSent));
 		}
 
 		private void ReceivedCommunicationToAllButSender(string[] messageChunks)
 		{
-			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonRoomString(messageChunks,
+			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString(messageChunks,
 				out User user);
 			onReceivedCommunicationToAllButSenderEvent?.Invoke((user, messageSent));
 		}
@@ -243,13 +291,13 @@ namespace NetClient
 		private void ReceivedUsersInRoom(string[] messageChunks)
 		{
 			List<User> users =
-				ProcessMessageData.GetUserListAndRoomGuidFromFormatStringGuidUserListJson(messageChunks, out Guid guidRoom);
-			onReceivedUsersListInRoomEvent?.Invoke((guidRoom, users));
+				ProcessMessageData.GetUserListAndRoomFromFormatStringRoomJsonUserListJson(messageChunks, out Room room);
+			onReceivedUsersListInRoomEvent?.Invoke((room, users));
 		}
 
 		private void ReceivedMessageWasReceivedByUser(string[] messageChunks)
 		{
-			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonRoomString( messageChunks,
+			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString( messageChunks,
 				out User user);
 			onReceivedMessageWasReceivedByUserEvent?.Invoke((user, messageSent));
 		}
@@ -290,21 +338,21 @@ namespace NetClient
 
 		private void ReceivedRoomCreated(string[] messageChunks)
 		{
-			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoom( messageChunks);
+			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
 			onRecievedRoomCreatedEvent?.Invoke(fromJson);
 			Console.WriteLine($"created room: {fromJson.GetGuid().ToString()} has been created");
 		}
 
 		private void ReceivedRoomDestroyed(string[] messageChunks)
 		{
-			Room destroyedRoomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoom(messageChunks);
+			Room destroyedRoomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
 			onRecievedRoomDestroyedEvent?.Invoke(destroyedRoomFromJson);
 			Console.WriteLine($"room has been destroyed: {destroyedRoomFromJson.GetGuid().ToString()}");
 		}
 
 		private void ReceivedRoomJoined(string[] messageChunks)
 		{
-			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoom(messageChunks);
+			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
 			onRecievedRoomJoinedEvent?.Invoke(roomFromJson);
 			Console.WriteLine($"joined room: {roomFromJson.GetGuid().ToString()}");
 		}
@@ -320,7 +368,7 @@ namespace NetClient
 		private void ReceivedMessage(string[] messageChunks)
 		{
 			var messageString =
-				ProcessMessageData.GetUserMessageFromMessageFormatStringJsonRoomString(messageChunks,
+				ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString(messageChunks,
 					out var user);
 			SendReceivedMessage(user, messageString);
 			onRecievedMessageFromUserEvent?.Invoke((user, messageString));
@@ -362,7 +410,7 @@ namespace NetClient
 		{
 			handlingUserPationation = true;
 			
-			var page = ProcessMessageData.ExtractPageAndUsersFromFormatStringIntStringUserListJson(messageChunks, out var tmUsers);
+			var page = ProcessMessageData.GetPageAndUsersFromFormatStringIntStringUserListJson(messageChunks, out var tmUsers);
 			tmUsersList.AddRange(tmUsers);
 			if (page == 0)
 			{
@@ -377,7 +425,7 @@ namespace NetClient
 		{
 			handlingRoomsPationation = true;
 
-			var page = ProcessMessageData.ExtractPageAndUsersFromFormatStringIntStringRoomListJson(messageChunks,
+			var page = ProcessMessageData.GetPageAndUsersFromFormatStringIntStringRoomListJson(messageChunks,
 					out List<Room> tmRooms);
 			tmRoomsList.AddRange(tmRooms);
 			if (page == 0)
@@ -423,21 +471,22 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestAddUserRoom}",
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestAddUserToRoom}",
 				$"{roomID.ToString()}",
 				$"{user.GetUserName()}"
 			};
 			await SendMessage(send);
 		}
 
-		public async Task RequestCreateRoom(string meta, int roomSize, bool isPublic)
+		public async Task RequestCreateRoom(string meta, int roomSize, bool isPublic, string nameOfRoom)
 		{
 			var send = new []
 			{
 				$"{(int)CommunicationTypeEnum.ServerReceiveRequestCreateRoom}",
 				$"{roomSize.ToString()}",
 				$"{(isPublic?"PUBLIC":"PRIVATE")}",
-				$"{meta}"
+				$"{meta}",
+				$"{nameOfRoom}"
 			};
 			await SendMessage(send);
 		}
@@ -481,6 +530,81 @@ namespace NetClient
 			await SendMessage(send);
 		}
 		
+		public async Task RequestLockRoom(Room room)
+		{
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestLockRoom}",
+				$"{Room.GetJsonFromRoom(room)}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestUnlockRoom(Room room)
+		{
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestUnlockRoom}",
+				$"{Room.GetJsonFromRoom(room)}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestRemoveUserFromRoom(Room room, User user)
+		{
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRemoveUserFromRoom}",
+				$"{User.GetJsonFromUser(user)}",
+				$"{Room.GetJsonFromRoom(room)}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestBanUserFromRoom(Room room, User user)
+		{
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestBanUserFromRoom}",
+				$"{User.GetJsonFromUser(user)}",
+				$"{Room.GetJsonFromRoom(room)}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestRemoveBanFromUserInRoom(Room room, User user)
+		{
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRemoveBanFromUserInRoom}",
+				$"{User.GetJsonFromUser(user)}",
+				$"{Room.GetJsonFromRoom(room)}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestApproveUserFromRoom(Room room, User user)
+		{
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestApproveUserFromRoom}",
+				$"{User.GetJsonFromUser(user)}",
+				$"{Room.GetJsonFromRoom(room)}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestRemoveApproveFromUserInRoom(Room room, User user)
+		{
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRemoveApproveFromUserInRoom}",
+				$"{User.GetJsonFromUser(user)}",
+				$"{Room.GetJsonFromRoom(room)}"
+			};
+			await SendMessage(send);
+		}
+		
 		public async void RequestSendMessageToUser(User user, string message)
 		{
 			var userJson = User.GetJsonFromUser(user);
@@ -492,12 +616,12 @@ namespace NetClient
 			};
 			await SendMessage(send);
 		}
-		public async Task RequestSendMessageToRoomAsync(Guid roomID, String message)
+		public async Task RequestSendMessageToRoomAsync(Guid roomGuid, String message)
 		{
 			var send = new []
 			{
 				$"{(int)CommunicationTypeEnum.ServerReceiveSendMessageToRoom}",
-				$"{roomID.ToString()}",
+				$"{roomGuid.ToString()}",
 				$"{message}"
 			};
 			await SendMessage(send);

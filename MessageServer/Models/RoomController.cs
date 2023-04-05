@@ -12,7 +12,7 @@ public class RoomController
 
 	public ServerRoom CreateNewServerRoom(User ServerRoomCreator, string [] messageChunks)
 	{
-		ServerRoom tmpServerRoom = new ServerRoom(ServerRoomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", messageChunks [3],"");
+		ServerRoom tmpServerRoom = new ServerRoom(ServerRoomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", messageChunks [3],messageChunks [4]);
 		ServerRoomDictionary.Add(tmpServerRoom.GetGuid(), tmpServerRoom);
 		return tmpServerRoom;
 	}
@@ -38,28 +38,6 @@ public class RoomController
 		return ServerRoomList;
 	}
 
-	public Dictionary<Guid, ServerRoom> GetServerRoomDictionary()
-	{
-		return ServerRoomDictionary;
-	}
-
-	public string JSONGetServerRoomList()
-	{
-		List<Room> Rooms = GetRoomsList();
-		string output = Room.GetJsonFromRoomList(Rooms);
-		return output;
-	}
-
-	public List<ServerRoom> GetServerRoomsList()
-	{
-		List<ServerRoom> ServerRooms = new List<ServerRoom>();
-		foreach (var pair in ServerRoomDictionary)
-		{
-			ServerRooms.Add(pair.Value);
-		}
-		return ServerRooms;
-	}
-	
 	public List<Room> GetRoomsList()
 	{
 		List<Room> Rooms = new List<Room>();
@@ -72,13 +50,13 @@ public class RoomController
 	}
 
 
-	public ServerRoom.RoomStatusCodes AddUserToServerRoom(User userToAdd, Guid ServerRoomNumber)
+	public Room.RoomStatusCodes AddUserToServerRoom(User userToAdd, Guid ServerRoomNumber, User requestedBy)
 	{
 		if (ServerRoomDictionary.ContainsKey(ServerRoomNumber))
 		{
 			Console.WriteLine($"User {userToAdd.GetUserName()} added to ServerRoom {ServerRoomNumber}");
 			ServerRoom ServerRoom = ServerRoomDictionary [ServerRoomNumber];
-			var addUserToServerRoom = ServerRoom.AddUserToRoom(userToAdd);
+			var addUserToServerRoom = ServerRoom.AddUserToRoom(userToAdd, requestedBy);
 			return addUserToServerRoom;
 			
 		}
@@ -109,9 +87,65 @@ public class RoomController
 	{
 		ServerRoomDictionary[room.GetGuid()].RemoveUserFromRoom(user);
 	}
+	
+	public void RemoveUserFromBanListInServerRoom(User user, Room room)
+	{
+		ServerRoomDictionary[room.GetGuid()].RemoveBanFromUserFromRoom(user);
+	}
+	
+	public void AddUserToBanListInServerRoom(User user, Room room)
+	{
+		ServerRoomDictionary[room.GetGuid()].BanUserFromRoom(user);
+	}
+	
+	public void ApproveUserFromRoom(User user, Room room)
+	{
+		ServerRoomDictionary[room.GetGuid()].ApproveUserFromRoom(user);
+	}
+	
+	public void RemoveUserFromApproveListInServerRoom(User user, Room room)
+	{
+		ServerRoomDictionary[room.GetGuid()].RemoveApproveFromUserFromRoom(user);
+	}
+	
+	private void LockRoom(bool on, Room room)
+	{
+		ServerRoomDictionary[room.GetGuid()].LockRoom(on);
+	}
+	
+	public void AddUserToBanListInServerRoom(string roomName, Room room)
+	{
+		ServerRoomDictionary[room.GetGuid()].SetRoomName(roomName);
+	}
 
 	public List<User> GetUsersInRoom(Room room)
 	{
 		return ServerRoomDictionary[room.GetGuid()].GetUsersInRoom();
+	}
+	
+	public bool IsCreatorOfRoom(Room room, User user)
+	{
+		if (ServerRoomDictionary[room.GetGuid()].GetCreator().GetUserName() == user.GetUserName())
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	public bool TryLockRoom(Room room, User user, bool on)
+	{
+		if (IsCreatorOfRoom(room, user))
+		{
+			LockRoom(on, room);
+			return true;
+		}
+
+		return false;
+	}
+
+	public bool IsInRoom(Room room, User user)
+	{
+		return ServerRoomDictionary[room.GetGuid()].UserInRoom(user);
 	}
 }

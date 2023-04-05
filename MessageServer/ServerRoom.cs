@@ -31,33 +31,49 @@ public class ServerRoom: Room
         _roomName = roomName;
     }
     
-    public RoomStatusCodes AddUserToRoom(User usrToAdd)
+    public RoomStatusCodes AddUserToRoom(User usrToAdd, User requestedBy)
     {
-	    Console.WriteLine("AddUserToRoom");
-	    var ls = new StringBuilder();
-	    _usersInRoom.ForEach(a => ls.Append(a._userName));
-	    Console.WriteLine(ls.ToString());
-	    Console.WriteLine(_isRoomLocked);
-			
-	    if (_isRoomLocked || _roomLimit <= _usersInRoom.Count)
+	    if (UserInRoom(usrToAdd))
 	    {
-		    Console.WriteLine("room locked");
+		    return RoomStatusCodes.AlreadyJoined;
+	    }
+
+	    if (_roomLimit <= _usersInRoom.Count)
+	    {
+		    return RoomStatusCodes.Full;
+	    }
+
+	    if (_isRoomLocked)
+	    {
 		    return RoomStatusCodes.RoomLocked;
 	    }
-	    Console.WriteLine("Room Not Locked");
 
-	    if (!_bannedList.Contains(usrToAdd)) {
-		    Console.WriteLine("user added");
-		    Console.WriteLine(usrToAdd.WebSocketID);
-		    _usersInRoom.Add(usrToAdd);
-		    return RoomStatusCodes.Ok;
-	    }
-	    else {
-		    Console.WriteLine("user banned");
+	    if (_bannedList.Contains(usrToAdd))
+	    {
 		    return RoomStatusCodes.Banned;
 	    }
+	    
+	    if (!_isPublic && !_approvedList.Contains(usrToAdd) && requestedBy.GetUserName() != _creator.GetUserName())
+	    {
+		    return RoomStatusCodes.Private;
+	    }
+	    
+	    _usersInRoom.Add(usrToAdd);
+	    return RoomStatusCodes.Ok;
     }
-    
+
+    public bool UserInRoom(User usrToAdd)
+    {
+	    foreach (var user in _usersInRoom)
+	    {
+		    if (user.GetUserName() == usrToAdd.GetUserName())
+		    {
+			    return true;
+		    }
+	    }
+	    return false;
+    }
+
     public RoomStatusCodes RemoveUserFromRoom(User usrToRemove)
     {
 	    _usersInRoom.Remove(usrToRemove);
