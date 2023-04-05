@@ -148,4 +148,9 @@ public class RoomController
 	{
 		return ServerRoomDictionary[room.GetGuid()].UserInRoom(user);
 	}
+
+	public bool RoomExists(Guid guid)
+	{
+		return ServerRoomDictionary.ContainsKey(guid);
+	}
 }

@@ -86,14 +86,13 @@ public class WebSocketHandler
 									if (inRoom != userProfileFromSocketId.GetUserGuid())
 									{
 										SendUserLeftRoom(user, inRoom, userJson);
-										if (isOwner)
-										{
-											SendRoomDestroyed(user, room);
-										}
 									}
 								}
 								_roomController.RemoveUserFromServerRoom(userProfileFromSocketId, room);
-								_roomController.DestroyServerRoom(inRoom);
+								if (isOwner)
+								{
+									RoomDestroyed(room);
+								}
 							}
 						}
 					}
@@ -185,7 +184,7 @@ public class WebSocketHandler
 			
 			//"[ServerReceiveSendMessageToRoom]:[ROOM_GUID]:[MESSAGE_STRING]"
 			case CommunicationTypeEnum.ServerReceiveSendMessageToRoom: 
-				ReceivedSendMessageToRoom(index, messageChunks);
+				ReceivedSendMessageToRoom(index, messageChunks, s);
 				break;
 
 			//"[ServerReceiveRequestUsersListJsonInRoom]:[ROOM_GUID]"
@@ -249,18 +248,53 @@ public class WebSocketHandler
 			SendErrorMessage(index, com, $"You do not own Room {room.GetRoomName()}");
 			return;
 		}
+		
+		foreach (var u in _roomController.GetUsersInRoom(room))
+		{
+			SendUserLeftRoom(u, room.GetGuid(), User.GetJsonFromUser(user));
+		}
+
+		if (_roomController.IsCreatorOfRoom(room, user))
+		{
+			RoomDestroyed(room);
+			return;
+		}
+
+		if (requester.GetUserName() != user.GetUserName())
+		{
+			SendYouWhereRemovedFromTheRoom(user, room);
+		}
+		
 		_roomController.RemoveUserFromServerRoom(user, room);
 	}
+
 	
+
+	private void RoomDestroyed(Room room)
+	{
+		foreach (var u in _roomController.GetUsersInRoom(room))
+		{
+			SendRoomDestroyed(u, room);
+			SendRoomLeft(u, room);
+		}
+		_roomController.DestroyServerRoom(room.GetGuid());
+	}
+
 	void ReceivedRequestBanUserFromRoom(int index, string[] messageChunks, CommunicationTypeEnum com)
 	{
 		User requester = _userController.GetUserProfileFromSocketId(index);
 		Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
+		if (!_roomController.RoomExists(room.GetGuid()))
+		{
+			SendErrorMessage(index, com, $"Room {room.GetGuid()} does not exist");
+			return;
+		}
 		if (!_roomController.IsCreatorOfRoom(room, requester))
 		{
 			SendErrorMessage(index, com, $"You do not own Room {room.GetRoomName()}");
 			return;
 		}
+		SendYouHaveBeenBannedFromRoom(user, room);
 		_roomController.AddUserToBanListInServerRoom(user, room);
 	}
 	
@@ -268,11 +302,17 @@ public class WebSocketHandler
 	{
 		User requester = _userController.GetUserProfileFromSocketId(index);
 		Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
+		if (!_roomController.RoomExists(room.GetGuid()))
+		{
+			SendErrorMessage(index, com, $"Room {room.GetGuid()} does not exist");
+			return;
+		}
 		if (!_roomController.IsCreatorOfRoom(room, requester))
 		{
 			SendErrorMessage(index, com, $"You do not own Room {room.GetRoomName()}");
 			return;
 		}
+		SendYouAreNoLongerBannedFromRoom(user, room);
 		_roomController.RemoveUserFromBanListInServerRoom(user, room);
 	}
 	
@@ -280,11 +320,17 @@ public class WebSocketHandler
 	{
 		User requester = _userController.GetUserProfileFromSocketId(index);
 		Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
+		if (!_roomController.RoomExists(room.GetGuid()))
+		{
+			SendErrorMessage(index, com, $"Room {room.GetGuid()} does not exist");
+			return;
+		}
 		if (!_roomController.IsCreatorOfRoom(room, requester))
 		{
 			SendErrorMessage(index, com, $"You do not own Room {room.GetRoomName()}");
 			return;
 		}
+		SendYouHaveBeenApprovedForRoom(user, room);
 		_roomController.ApproveUserFromRoom(user, room);
 	}
 	
@@ -292,11 +338,17 @@ public class WebSocketHandler
 	{
 		User requester = _userController.GetUserProfileFromSocketId(index);
 		Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
+		if (!_roomController.RoomExists(room.GetGuid()))
+		{
+			SendErrorMessage(index, com, $"Room {room.GetGuid()} does not exist");
+			return;
+		}
 		if (!_roomController.IsCreatorOfRoom(room, requester))
 		{
 			SendErrorMessage(index, com, $"You do not own Room {room.GetRoomName()}");
 			return;
 		}
+		SendYouAreNoLongerApprovedForRoom(user, room);
 		_roomController.RemoveUserFromApproveListInServerRoom(user, room);
 	}
 
@@ -304,6 +356,11 @@ public class WebSocketHandler
 	{
 		Room room = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
 		User user = _userController.GetUserProfileFromSocketId(index);
+		if (!_roomController.RoomExists(room.GetGuid()))
+		{
+			SendErrorMessage(index, com, $"Room {room.GetGuid()} does not exist");
+			return;
+		}
 		if (!_roomController.TryLockRoom(room, user, lockOn))
 		{
 			SendErrorMessage(index, com, $"You do not own Room {room.GetRoomName()}");
@@ -312,15 +369,18 @@ public class WebSocketHandler
 
 	private void ReceivedRequestAddUserToRoom(int index, string[] messageChunks, CommunicationTypeEnum com)
 	{
+		var roomGuid = Guid.Parse(messageChunks[1]);
+		if (!_roomController.RoomExists(roomGuid))
+		{
+			SendErrorMessage(index, com, $"Room {roomGuid} does not exist");
+			return;
+		}
 		User userProfile = _userController.GetUserProfileFromUserName(messageChunks[2]);
 		User requestedByUser = _userController.GetUserProfileFromSocketId(index);
-		var roomGuid = messageChunks[1];
-		Room userAddedToRoom = _roomController.GetServerRoomFromGUID(Guid.Parse(roomGuid));
+		
+		Room userAddedToRoom = _roomController.GetServerRoomFromGUID(roomGuid);
 		string jsonUser = User.GetJsonFromUser(userProfile);
-		Console.WriteLine(userProfile.WebSocketID);
-		Console.WriteLine(Guid.Parse(messageChunks[1]).ToString());
-		Console.WriteLine(User.GetJsonFromUser(userProfile));
-		var addUserToServerRoomStatus = _roomController.AddUserToServerRoom(userProfile, Guid.Parse(roomGuid), requestedByUser);
+		var addUserToServerRoomStatus = _roomController.AddUserToServerRoom(userProfile, roomGuid, requestedByUser);
 		switch (addUserToServerRoomStatus)
 		{
 			case Room.RoomStatusCodes.Ok:
@@ -389,9 +449,14 @@ public class WebSocketHandler
 	}
 
 
-	private void ReceivedSendMessageToRoom(int index, string[] messageChunks)
+	private void ReceivedSendMessageToRoom(int index, string[] messageChunks, CommunicationTypeEnum com)
 	{
 		Guid guid = Guid.Parse(messageChunks[1]);
+		if (!_roomController.RoomExists(guid))
+		{
+			SendErrorMessage(index, com, $"Room {guid} does not exist");
+			return;
+		}
 		Room room = _roomController.GetServerRoomFromGUID(guid);
 		User userMessage = _userController.GetUserProfileFromSocketId(index);
 		string messageToSend = messageChunks[2];
@@ -539,6 +604,16 @@ public class WebSocketHandler
 		SendMessage(index, send);
 	}
 	
+	private void SendYouWhereRemovedFromTheRoom(User user, Room room)
+	{
+		var send = new []
+		{
+			$"{(int) CommunicationTypeEnum.ClientReceiveRemovedFromTheRoom}",
+			$"{Room.GetJsonFromRoom(room)}"
+		};
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
+	}
+	
 	private void SendUserLeftRoom(User user, Guid inRoom, string userJson)
 	{
 		var send = new []
@@ -547,7 +622,7 @@ public class WebSocketHandler
 			$"{inRoom}",
 			$"{userJson}"
 		};
-		SendMessage(user.WebSocketID, send);
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
 	}
 
 	private void SendRoomDestroyed(User user, Room room)
@@ -557,7 +632,7 @@ public class WebSocketHandler
 			$"{(int) CommunicationTypeEnum.ClientReceiveRoomDestroyed}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
-		SendMessage(user.WebSocketID, send);
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
 	}
 
 	private void SendRoomCreated(int index, string createdRoomJason)
@@ -580,22 +655,72 @@ public class WebSocketHandler
 		SendMessage(index, send);
 	}
 
-	private void SendRoomJoined(User userProfile, Room userAddedToRoom)
+	private void SendRoomJoined(User user, Room room)
 	{
 		var send = new []
 		{
 			$"{(int) CommunicationTypeEnum.ClientReceiveJoinedRoom}",
-			$"{Room.GetJsonFromRoom(userAddedToRoom)}"
+			$"{Room.GetJsonFromRoom(room)}"
 		};
-		SendMessage(userProfile.WebSocketID, send);
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
+	}
+	
+	private void SendYouHaveBeenBannedFromRoom(User user, Room room)
+	{
+		var send = new []
+		{
+			$"{(int) CommunicationTypeEnum.ClientReceiveBannedFromRoom}",
+			$"{Room.GetJsonFromRoom(room)}"
+		};
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
+	}
+	
+	private void SendYouAreNoLongerBannedFromRoom(User user, Room room)
+	{
+		var send = new []
+		{
+			$"{(int) CommunicationTypeEnum.ClientReceiveNoLongerBannedFromRoom}",
+			$"{Room.GetJsonFromRoom(room)}"
+		};
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
+	}
+	
+	private void SendYouHaveBeenApprovedForRoom(User user, Room room)
+	{
+		var send = new []
+		{
+			$"{(int) CommunicationTypeEnum.ClientReceiveApprovedForRoom}",
+			$"{Room.GetJsonFromRoom(room)}"
+		};
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
+	}
+	
+	private void SendYouAreNoLongerApprovedForRoom(User user, Room room)
+	{
+		var send = new []
+		{
+			$"{(int) CommunicationTypeEnum.ClientReceiveNoLongerApprovedForRoom}",
+			$"{Room.GetJsonFromRoom(room)}"
+		};
+		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
+	}
+	
+	private void SendRoomLeft(User userProfile, Room userRemovedFromRoom)
+	{
+		var send = new []
+		{
+			$"{(int) CommunicationTypeEnum.ClientReceiveLeftRoom}",
+			$"{Room.GetJsonFromRoom(userRemovedFromRoom)}"
+		};
+		SendMessage(_userController.GetWebSocketIdFromUser(userProfile), send);
 	}
 
-	private void SendUserJoinedRoom(int index, string roomGUID, string jsonUser)
+	private void SendUserJoinedRoom(int index, Guid roomGUID, string jsonUser)
 	{
 		var send = new []
 		{
 			$"{(int) CommunicationTypeEnum.ClientReceiveUserJoinedRoom}",
-			$"{roomGUID}",
+			$"{roomGUID.ToString()}",
 			$"{jsonUser}"
 		};
 		SendMessage(index, send);
@@ -662,7 +787,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveYourGuid}",
+			$"{(int) CommunicationTypeEnum.ClientReceiveClientGuid}",
 			$"{user.GetUserGuid()}"
 		};
 		SendMessage(index, send);

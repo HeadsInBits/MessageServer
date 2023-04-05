@@ -35,14 +35,21 @@ namespace NetClient
 		public event Action<(User user, Guid roomGuid)> onRecievedUserLeftRoomEvent;
 		public event Action<List<Room>> onRecievedRoomListEvent;
 		public event Action<Room> onRecievedRoomCreatedEvent;
+		
+		public event Action<Room> onRecievedRemovedFromTheRoomEvent;
+		public event Action<Room> onRecievedBannedFromRoomEvent;
+		public event Action<Room> onRecievedNoLongerBannedFromRoomEvent;
+		public event Action<Room> onRecievedApprovedForRoomEvent;
+		public event Action<Room> onRecievedNoLongerApprovedForRoomEvent;
+		
 		public event Action<Room> onRecievedRoomJoinedEvent;
+		public event Action<Room> onRecievedRoomLeftEvent;
 		public event Action<(Room room, User user, string Message)> onRecievedRoomMessageEvent;
 		public event Action<(Room room, List<User> users)> onReceivedUsersListInRoomEvent;
-		public event Action<(User user, string messageSent)> onReceivedCommunicationToAllButSenderEvent;
 		public event Action<(User user, string messageSent)> onReceivedMessageWasReceivedByUserEvent;
 		public event Action<(User user, string messageSent)> onReceivedCommunicationToAllEvent;
 
-		public event Action<(CommunicationTypeEnum comEnum, string message)> onReceivedErrorResponseFromServer;
+		public event Action<(CommunicationTypeEnum comEnum, string message)> onReceivedErrorResponseFromServerEvent;
 		public event Action<Guid> onRecievedGuidEvent;
 		public event Action<(User user, Guid guid)> onRecievedUserWithGuidEvent;
 		
@@ -148,8 +155,8 @@ namespace NetClient
 					ReceivedMessageWasReceivedByUser(messageChunks);
 					break;
 				
-				//"[ClientReceiveYourGuid]:[USERID_GUID]"
-				case CommunicationTypeEnum.ClientReceiveYourGuid: 
+				//"[ClientReceiveClientGuid]:[USERID_GUID]"
+				case CommunicationTypeEnum.ClientReceiveClientGuid: 
 					ReceivedClientGuid(messageChunks);
 					break;
 
@@ -183,6 +190,11 @@ namespace NetClient
 					ReceivedRoomJoined(messageChunks);
 					break;
 				
+				//"[ClientReceiveLeftRoom]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveLeftRoom: 
+					ReceivedRoomLeft(messageChunks);
+					break;
+				
 				//"[ClientReceiveRoomDestroyed]:[ROOM_JSON] 
 				case CommunicationTypeEnum.ClientReceiveRoomDestroyed: 
 					ReceivedRoomDestroyed(messageChunks);
@@ -191,6 +203,31 @@ namespace NetClient
 				//"[ClientReceiveRoomCreated]:[ROOM_JSON] 
 				case CommunicationTypeEnum.ClientReceiveRoomCreated: 
 					ReceivedRoomCreated(messageChunks);
+					break;
+				
+				//"[ClientReceiveRemovedFromTheRoom]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveRemovedFromTheRoom: 
+					ReceivedRemovedFromTheRoom(messageChunks);
+					break;
+				
+				//"[ClientReceiveBannedFromRoom]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveBannedFromRoom: 
+					ReceivedBannedFromRoom(messageChunks);
+					break;
+				
+				//"[ClientReceiveNoLongerBannedFromRoom]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveNoLongerBannedFromRoom: 
+					ReceivedNoLongerBannedFromRoom(messageChunks);
+					break;
+				
+				//"[ClientReceiveApprovedForRoom]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveApprovedForRoom: 
+					ReceivedApprovedForRoom(messageChunks);
+					break;
+				
+				//"[ClientReceiveNoLongerApprovedForRoom]:[ROOM_JSON] 
+				case CommunicationTypeEnum.ClientReceiveNoLongerApprovedForRoom: 
+					ReceivedNoLongerApprovedForRoom(messageChunks);
 					break;
 				
 				//"[ClientReceiveRoomMessage]:[UserID_GUID]:[ROOM_JSON]:[MESSAGE_STRING]"
@@ -222,12 +259,7 @@ namespace NetClient
 				case CommunicationTypeEnum.ClientReceiveUsersListJsonInRoomPaginated: 
 					ReceivedUsersInRoomPaginated(messageChunks);
 					break;
-				
-				//"[ClientReceiveCommunicationToAllButSender]:[USER_JSON]:[MESSAGE]"
-				case CommunicationTypeEnum.ClientReceiveCommunicationToAllButSender: 
-					ReceivedCommunicationToAllButSender(messageChunks);
-					break;
-				
+
 				//"[ClientReceiveCommunicationToAllButSender]:[USER_JSON]:[MESSAGE]"
 				case CommunicationTypeEnum.ClientReceiveCommunicationToAll: 
 					ReceivedCommunicationToAll(messageChunks);
@@ -245,6 +277,36 @@ namespace NetClient
 
 			return true;
 
+		}
+
+		private void ReceivedNoLongerApprovedForRoom(string[] messageChunks)
+		{
+			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
+			onRecievedNoLongerApprovedForRoomEvent?.Invoke(fromJson);
+		}
+
+		private void ReceivedApprovedForRoom(string[] messageChunks)
+		{
+			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
+			onRecievedApprovedForRoomEvent?.Invoke(fromJson);
+		}
+
+		private void ReceivedNoLongerBannedFromRoom(string[] messageChunks)
+		{
+			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
+			onRecievedNoLongerBannedFromRoomEvent?.Invoke(fromJson);
+		}
+
+		private void ReceivedBannedFromRoom(string[] messageChunks)
+		{
+			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
+			onRecievedBannedFromRoomEvent?.Invoke(fromJson);
+		}
+
+		private void ReceivedRemovedFromTheRoom(string[] messageChunks)
+		{
+			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
+			onRecievedRemovedFromTheRoomEvent?.Invoke(fromJson);
 		}
 
 		private void ReceivedUsersInRoomPaginated(string[] messageChunks)
@@ -271,7 +333,7 @@ namespace NetClient
 
 		private void ReceivedErrorResponseFromServer(string[] messageChunks)
 		{
-			onReceivedErrorResponseFromServer?.Invoke(((CommunicationTypeEnum)int.Parse(messageChunks [1]),messageChunks[2]));
+			onReceivedErrorResponseFromServerEvent?.Invoke(((CommunicationTypeEnum)int.Parse(messageChunks [1]),messageChunks[2]));
 		}
 
 		private void ReceivedCommunicationToAll(string[] messageChunks)
@@ -279,13 +341,6 @@ namespace NetClient
 			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString(messageChunks,
 				out User user);
 			onReceivedCommunicationToAllEvent?.Invoke((user, messageSent));
-		}
-
-		private void ReceivedCommunicationToAllButSender(string[] messageChunks)
-		{
-			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString(messageChunks,
-				out User user);
-			onReceivedCommunicationToAllButSenderEvent?.Invoke((user, messageSent));
 		}
 
 		private void ReceivedUsersInRoom(string[] messageChunks)
@@ -355,6 +410,13 @@ namespace NetClient
 			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
 			onRecievedRoomJoinedEvent?.Invoke(roomFromJson);
 			Console.WriteLine($"joined room: {roomFromJson.GetGuid().ToString()}");
+		}
+		
+		private void ReceivedRoomLeft(string[] messageChunks)
+		{
+			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
+			onRecievedRoomLeftEvent?.Invoke(roomFromJson);
+			Console.WriteLine($"left room: {roomFromJson.GetGuid().ToString()}");
 		}
 
 		private void ReceivedRoomListJson(string[] messageChunks)
@@ -639,6 +701,8 @@ namespace NetClient
 		
 		public async Task RequestGetUsersInRoomAsync(Guid roomID)
 		{
+			if (tmRoomsUsersListDictionary.ContainsKey(roomID))
+				return;
 			var send = new []
 			{
 				$"{(int)CommunicationTypeEnum.ServerReceiveRequestUsersListJsonInRoom}",

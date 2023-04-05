@@ -135,6 +135,11 @@ namespace LibObjects
 			return _roomName;
 		}
 
+		public string GetMeta()
+		{
+			return _meta;
+		}
+
 		public Guid GetGuid()
 		{
 			return _roomId;
