@@ -36,8 +36,11 @@ public class WebSocketHandler
 	{
 		// Stop handling WebSocket messages
 		cancellation.Cancel();
-		foreach (var socket in sockets) {
-			if (socket != null) {
+		for (var index = 0; index < sockets.Length; index++)
+		{
+			var socket = sockets[index];
+			if (socket != null)
+			{
 				await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Server shutting down",
 					CancellationToken.None);
 			}
@@ -69,26 +72,29 @@ public class WebSocketHandler
 
 				if (result.MessageType == WebSocketMessageType.Close) {
 					// Close the socket
-					User userProfileFromSocketId = _userController.GetUserProfileFromSocketId(index);
-					var findAllRoomsWhereUserInRoom = _roomController.FindAllServerRoomsWhereUserInServerRoom(userProfileFromSocketId);
+					User userDisconnected = _userController.GetUserProfileFromSocketId(index);
+					var findAllRoomsWhereUserInRoom = _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected);
 					if (findAllRoomsWhereUserInRoom.Count > 0)
 					{
-						string userJson = User.GetJsonFromUser(userProfileFromSocketId);
-						foreach (var inRoom in findAllRoomsWhereUserInRoom)
+						string userJson = User.GetJsonFromUser(userDisconnected);
+						for (var i = 0; i < findAllRoomsWhereUserInRoom.Count; i++)
 						{
+							var inRoom = findAllRoomsWhereUserInRoom[i];
 							Room room = _roomController.GetServerRoomFromGUID(inRoom);
 							var usersInRoom = _roomController.GetUsersInRoom(room);
-							bool isOwner = room.GetCreator() == userProfileFromSocketId;
-							if (usersInRoom.Contains(userProfileFromSocketId))
+							bool isOwner = room.GetCreator() == userDisconnected;
+							if (_roomController.IsInRoom(room, userDisconnected))
 							{
-								foreach (var user in usersInRoom)
+								_roomController.RemoveUserFromServerRoom(userDisconnected, room);
+								for (var index1 = 0; index1 < usersInRoom.Count; index1++)
 								{
-									if (inRoom != userProfileFromSocketId.GetUserGuid())
+									var user = usersInRoom[index1];
+									if (inRoom != userDisconnected.GetUserGuid())
 									{
 										SendUserLeftRoom(user, inRoom, userJson);
 									}
 								}
-								_roomController.RemoveUserFromServerRoom(userProfileFromSocketId, room);
+
 								if (isOwner)
 								{
 									RoomDestroyed(room);
@@ -96,10 +102,15 @@ public class WebSocketHandler
 							}
 						}
 					}
-					_userController.RemoveUser(userProfileFromSocketId);
+					_userController.RemoveUser(userDisconnected);
 					sockets [index] = null;
+					for (var i = 0; i < _userController.connectedClients.Count; i++)
+					{
+						var user = _userController.connectedClients[i];
+						SendUserDisconnected(userDisconnected, user);
+					}
+
 					Console.WriteLine("Client Disconnected:" + index);
-					_userController.connectedClients.Remove(userProfileFromSocketId);
 					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
 						CancellationToken.None);
 				}
@@ -249,15 +260,13 @@ public class WebSocketHandler
 			return;
 		}
 		
-		foreach (var u in _roomController.GetUsersInRoom(room))
-		{
-			SendUserLeftRoom(u, room.GetGuid(), User.GetJsonFromUser(user));
-		}
+		_roomController.RemoveUserFromServerRoom(user, room);
 
-		if (_roomController.IsCreatorOfRoom(room, user))
+		var us = _roomController.GetUsersInRoom(room);
+		for (var i = 0; i < us.Count; i++)
 		{
-			RoomDestroyed(room);
-			return;
+			var u = us[i];
+			SendUserLeftRoom(u, room.GetGuid(), User.GetJsonFromUser(user));
 		}
 
 		if (requester.GetUserName() != user.GetUserName())
@@ -265,18 +274,26 @@ public class WebSocketHandler
 			SendYouWhereRemovedFromTheRoom(user, room);
 		}
 		
-		_roomController.RemoveUserFromServerRoom(user, room);
+		SendRoomLeft(user,room);
+
+		if (_roomController.IsCreatorOfRoom(room, user))
+		{
+			RoomDestroyed(room);
+		}
 	}
 
 	
 
 	private void RoomDestroyed(Room room)
 	{
-		foreach (var u in _roomController.GetUsersInRoom(room))
+		var us = _roomController.GetUsersInRoom(room);
+		for (var index = 0; index < us.Count; index++)
 		{
+			var u = us[index];
 			SendRoomDestroyed(u, room);
 			SendRoomLeft(u, room);
 		}
+
 		_roomController.DestroyServerRoom(room.GetGuid());
 	}
 
@@ -385,12 +402,15 @@ public class WebSocketHandler
 		{
 			case Room.RoomStatusCodes.Ok:
 				SendRoomJoined(userProfile, userAddedToRoom);
-				foreach (var user in _roomController.GetUsersInRoom(userAddedToRoom))
+				var room = _roomController.GetUsersInRoom(userAddedToRoom);
+				for (var i = 0; i < room.Count; i++)
 				{
+					var user = room[i];
 					if (user.GetUserName() == userProfile.GetUserName()) continue;
 					int socket = _userController.GetWebSocketIdFromUser(user);
 					SendUserJoinedRoom(socket, roomGuid, jsonUser);
 				}
+
 				break;
 			case Room.RoomStatusCodes.Banned:
 				SendErrorMessage(index, com, $"You are banned from room {userAddedToRoom.GetRoomName()}");
@@ -460,8 +480,10 @@ public class WebSocketHandler
 		Room room = _roomController.GetServerRoomFromGUID(guid);
 		User userMessage = _userController.GetUserProfileFromSocketId(index);
 		string messageToSend = messageChunks[2];
-		foreach (var usr in _roomController.GetUsersInServerRoom(room.GetGuid()))
+		var usrs = _roomController.GetUsersInServerRoom(room.GetGuid());
+		for (var i = 0; i < usrs.Count; i++)
 		{
+			var usr = usrs[i];
 			SendMessageToRoom(usr, userMessage, room, messageToSend);
 		}
 	}
@@ -569,8 +591,9 @@ public class WebSocketHandler
 
 			bool Unique = true;
 
-			foreach (var usr in _userController.connectedClients)
+			for (var i = 0; i < _userController.connectedClients.Count; i++)
 			{
+				var usr = _userController.connectedClients[i];
 				if (usr.WebSocketID == index)
 					Unique = false;
 			}
@@ -633,6 +656,16 @@ public class WebSocketHandler
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
+	}
+	
+	private void SendUserDisconnected(User userDisconnected, User userToSentTo)
+	{
+		var send = new []
+		{
+			$"{(int) CommunicationTypeEnum.ClientReceiveUserDisconnected}",
+			$"{User.GetJsonFromUser(userDisconnected)}"
+		};
+		SendMessage(_userController.GetWebSocketIdFromUser(userToSentTo), send);
 	}
 
 	private void SendRoomCreated(int index, string createdRoomJason)
@@ -739,16 +772,18 @@ public class WebSocketHandler
 
 	private void SendCommunicationsToUser(User com, string message, int index)
 	{
-		
-		foreach (var u in _userController.connectedClients) {
-			if (u.GetUserName() == com.GetUserName()) {
-				var send = new []
+		for (var i = 0; i < _userController.connectedClients.Count; i++)
+		{
+			var u = _userController.connectedClients[i];
+			if (u.GetUserName() == com.GetUserName())
+			{
+				var send = new[]
 				{
 					$"{(int) CommunicationTypeEnum.ClientReceiveMessageFromUser}",
 					$"{User.GetJsonFromUser(_userController.GetUserProfileFromSocketId(index))}",
 					$"{message}"
 				};
-				SendMessage(u.WebSocketID, send);
+				SendMessage(_userController.GetWebSocketIdFromUser(u), send);
 			}
 		}
 	}

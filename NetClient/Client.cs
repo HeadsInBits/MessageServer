@@ -35,28 +35,27 @@ namespace NetClient
 		public event Action<(User user, Guid roomGuid)> onRecievedUserLeftRoomEvent;
 		public event Action<List<Room>> onRecievedRoomListEvent;
 		public event Action<Room> onRecievedRoomCreatedEvent;
-		
 		public event Action<Room> onRecievedRemovedFromTheRoomEvent;
 		public event Action<Room> onRecievedBannedFromRoomEvent;
 		public event Action<Room> onRecievedNoLongerBannedFromRoomEvent;
 		public event Action<Room> onRecievedApprovedForRoomEvent;
 		public event Action<Room> onRecievedNoLongerApprovedForRoomEvent;
-		
 		public event Action<Room> onRecievedRoomJoinedEvent;
 		public event Action<Room> onRecievedRoomLeftEvent;
 		public event Action<(Room room, User user, string Message)> onRecievedRoomMessageEvent;
 		public event Action<(Room room, List<User> users)> onReceivedUsersListInRoomEvent;
 		public event Action<(User user, string messageSent)> onReceivedMessageWasReceivedByUserEvent;
 		public event Action<(User user, string messageSent)> onReceivedCommunicationToAllEvent;
-
 		public event Action<(CommunicationTypeEnum comEnum, string message)> onReceivedErrorResponseFromServerEvent;
 		public event Action<Guid> onRecievedGuidEvent;
 		public event Action<(User user, Guid guid)> onRecievedUserWithGuidEvent;
+		public event Action<User> onRecievedUserDisconnectedEvent;
 		
 		//FOR DEBUGGING
 		public event Action<string> onMessageSentToSocketEvent;
 		public event Action<string> onIncomingWebSocketMessageEvent;
 		
+
 
 
 		~Client()
@@ -98,7 +97,7 @@ namespace NetClient
 				WebSocketReceiveResult result = await webSocket.ReceiveAsync(receiveSegment, CancellationToken.None);
 				if (result.MessageType == WebSocketMessageType.Text)
 				{
-					string receivedMessage = System.Text.Encoding.UTF8.GetString(receiveBuffer, 0, result.Count);
+					string receivedMessage = Encoding.UTF8.GetString(receiveBuffer, 0, result.Count);
 
 					if (!ProcessIncomingMessage(receivedMessage))
 					{
@@ -111,7 +110,7 @@ namespace NetClient
 		private async Task SendMessage(string[] messageArray)
 		{
 			string message = ProcessMessageData.BuildMessageSafe(messageArray);
-        	ArraySegment<byte> buffer = new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(message));
+        	ArraySegment<byte> buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
         	await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
         	onMessageSentToSocketEvent?.Invoke(message);
 
@@ -250,7 +249,7 @@ namespace NetClient
 					ReceivedUserInfo(messageChunks);
 					break;
 				
-				//"[ClientReceiveUsersListJsonInRoom]:[ROOM_GUID]:[USER_LIST_JSON]"
+				//"[ClientReceiveUsersListJsonInRoom]:[ROOM_JSON]:[USER_LIST_JSON]"
 				case CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom: 
 					ReceivedUsersInRoom(messageChunks);
 					break;
@@ -269,6 +268,11 @@ namespace NetClient
 				case CommunicationTypeEnum.ClientReceiveErrorResponseFromServer: 
 					ReceivedErrorResponseFromServer(messageChunks);
 					break;
+				
+				//"[ClientReceiveUserDisconnected]:[USER_JSON]"
+				case CommunicationTypeEnum.ClientReceiveUserDisconnected: 
+					ReceiveUserDisconnected(messageChunks);
+					break;
 
 				default:
 					throw new NotSupportedException();
@@ -277,6 +281,12 @@ namespace NetClient
 
 			return true;
 
+		}
+
+		private void ReceiveUserDisconnected(string[] messageChunks)
+		{
+			User user = ProcessMessageData.GetUserFromMessageFormatStringJsonUser(messageChunks);
+			onRecievedUserDisconnectedEvent?.Invoke(user);
 		}
 
 		private void ReceivedNoLongerApprovedForRoom(string[] messageChunks)
@@ -311,8 +321,7 @@ namespace NetClient
 
 		private void ReceivedUsersInRoomPaginated(string[] messageChunks)
 		{
-			handlingUserPationation = true;
-			
+
 			var page = ProcessMessageData.GetPageRoomAndUsersFromFormatStringIntStringUserListJsonRoomJson(messageChunks, 
 				out var tmUsers, out Room room);
 			if (tmRoomsUsersListDictionary.ContainsKey(room.GetGuid()))
@@ -327,7 +336,6 @@ namespace NetClient
 			{
 				onReceivedUsersListInRoomEvent?.Invoke((room, tmRoomsUsersListDictionary[room.GetGuid()]));
 				tmRoomsUsersListDictionary.Remove(room.GetGuid());
-				handlingUserPationation = false;
 			}
 		}
 
@@ -438,7 +446,7 @@ namespace NetClient
 
 		private void ReceivedUserList(string[] messageChunks)
 		{
-			networkUsers = ProcessMessageData.GetUsersFromMessageFormatStringJsonUserList( messageChunks);
+			networkUsers = ProcessMessageData.GetUsersFromMessageFormatStringJsonUserList(messageChunks);
 			onRecievedUserListEvent?.Invoke(networkUsers);
 		}
 

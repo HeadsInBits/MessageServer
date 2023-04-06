@@ -52,7 +52,13 @@ public class UserController
 
 	public void RemoveUser(User user)
 	{
-		connectedClients.Remove(user);
+		foreach (var client in connectedClients)
+		{
+			if (client.GetUserGuid() == user.GetUserGuid())
+			{
+				connectedClients.Remove(client);
+			}
+		}
 	}
 
 	public int GetWebSocketIdFromUser(User user)

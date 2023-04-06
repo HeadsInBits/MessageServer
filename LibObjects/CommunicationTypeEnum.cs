@@ -30,6 +30,7 @@ namespace LibObjects
         ClientReceiveNoLongerBannedFromRoom, // implemented on client & server
         ClientReceiveApprovedForRoom, // implemented on client & server
         ClientReceiveNoLongerApprovedForRoom, // implemented on client & server
+        ClientReceiveUserDisconnected, // implemented on client & server
         /// <summary>
         /// MessageFromClient
         /// </summary>
