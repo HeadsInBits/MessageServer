@@ -111,4 +111,14 @@ public class ServerRoom: Room
     {
 	    _roomName = name;
     }
+
+    public List<User> GetBannedList()
+    {
+	    return _bannedList;
+    }
+
+    public List<User> GetApprovedList()
+    {
+	    return _approvedList;
+    }
 }

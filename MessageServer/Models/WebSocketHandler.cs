@@ -242,6 +242,16 @@ public class WebSocketHandler
 			case CommunicationTypeEnum.ServerReceiveRequestRemoveApproveFromUserInRoom: 
 				ReceivedRequestRemoveApproveFromUserInRoom(index, messageChunks, s);	
 				break;
+			
+			//"[ServerReceiveRequestApproveUserFromRoom]:[ROOM_JSON]"
+			case CommunicationTypeEnum.ServerReceiveRequestRoomBannedUserList: 
+				ReceivedRequestBannedUsersListJsonInRoom(index, Guid.Parse(messageChunks [1]));
+				break;
+			
+			//"[ServerReceiveRequestRemoveApproveFromUserInRoom]:[ROOM_JSON]"
+			case CommunicationTypeEnum.ServerReceiveRequestRoomApprovedUserList: 
+				ReceivedRequestApprovedUsersListJsonInRoom(index, Guid.Parse(messageChunks [1]));	
+				break;
 
 			default:
 				SendErrorMessage(index, s, "Command not implemented");
@@ -551,7 +561,7 @@ public class WebSocketHandler
 	private void ReceivedRequestUsersListJsonInRoom(int index, Guid roomID)
 	{
 		Room r = _roomController.GetServerRoomFromGUID(roomID);
-		List<User> clients = _userController.connectedClients;
+		List<User> clients = _roomController.GetUsersInRoom(r);
 		int count = clients.Count;
 		int sentNumber = (int)MathF.Ceiling((float)count / User.NumberOfUsersToSendInMessage)-1;
 		if (count > User.NumberOfUsersToSendInMessage)
@@ -572,7 +582,63 @@ public class WebSocketHandler
 		}
 		else
 		{
-			SendUserListJsonInRoom(index, r);
+			SendUserListJsonInRoom(index, r, clients, CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom);
+		}
+	}
+	
+	private void ReceivedRequestBannedUsersListJsonInRoom(int index, Guid roomID)
+	{
+		Room r = _roomController.GetServerRoomFromGUID(roomID);
+		List<User> clients = _roomController.GetBannedUserListInRoom(r);
+		int count = clients.Count;
+		int sentNumber = (int)MathF.Ceiling((float)count / User.NumberOfUsersToSendInMessage)-1;
+		if (count > User.NumberOfUsersToSendInMessage)
+		{
+			CommunicationTypeEnum command = CommunicationTypeEnum.ClientReceiveRoomBannedUserListPaginated;
+			while (count > 0)
+			{
+				var list = new List<User>();
+				int c = 0;
+				for(; c < User.NumberOfUsersToSendInMessage && count > 0 ; c++)
+				{
+					list.Add(clients[count-1]);
+					count--;
+				}
+				SendRoomUserListJsonPaginated(r, index, command, sentNumber, count, c, list);
+				sentNumber--;
+			}
+		}
+		else
+		{
+			SendUserListJsonInRoom(index, r, clients, CommunicationTypeEnum.ClientReceiveRoomBannedUserList);
+		}
+	}
+	
+	private void ReceivedRequestApprovedUsersListJsonInRoom(int index, Guid roomID)
+	{
+		Room r = _roomController.GetServerRoomFromGUID(roomID);
+		List<User> clients = _roomController.GetApprovedUserListInRoom(r);
+		int count = clients.Count;
+		int sentNumber = (int)MathF.Ceiling((float)count / User.NumberOfUsersToSendInMessage)-1;
+		if (count > User.NumberOfUsersToSendInMessage)
+		{
+			CommunicationTypeEnum command = CommunicationTypeEnum.ClientReceiveRoomApprovedUserListPaginated;
+			while (count > 0)
+			{
+				var list = new List<User>();
+				int c = 0;
+				for(; c < User.NumberOfUsersToSendInMessage && count > 0 ; c++)
+				{
+					list.Add(clients[count-1]);
+					count--;
+				}
+				SendRoomUserListJsonPaginated(r, index, command, sentNumber, count, c, list);
+				sentNumber--;
+			}
+		}
+		else
+		{
+			SendUserListJsonInRoom(index, r, clients, CommunicationTypeEnum.ClientReceiveRoomApprovedUserList);
 		}
 	}
 
@@ -862,6 +928,8 @@ public class WebSocketHandler
 		SendMessage(index, send);
 	}
 	
+	
+	
 	private void SendUserReceivedMessage(int index, User user, string message)
 	{
 		User Reciever = _userController.GetUserProfileFromSocketId(index);
@@ -891,14 +959,14 @@ public class WebSocketHandler
 		}
 	}
 
-	private void SendUserListJsonInRoom(int index, Room r)
+	private void SendUserListJsonInRoom(int index, Room r, List<User> users, CommunicationTypeEnum com)
 	{
-		List<User> usersInRoom = _roomController.GetUsersInRoom(r);
+		
 		var send = new[]
 		{
 			$"{(int) CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom}",
 			$"{Room.GetJsonFromRoom(r)}",
-			$"{User.GetJsonFromUsersList(usersInRoom)}"
+			$"{User.GetJsonFromUsersList(users)}"
 		};
 		SendMessage(index, send);
 	}

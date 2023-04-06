@@ -31,6 +31,10 @@ namespace LibObjects
         ClientReceiveApprovedForRoom, // implemented on client & server
         ClientReceiveNoLongerApprovedForRoom, // implemented on client & server
         ClientReceiveUserDisconnected, // implemented on client & server
+        ClientReceiveRoomBannedUserList, //implemented on client & server
+        ClientReceiveRoomApprovedUserList, //implemented on client & server
+        ClientReceiveRoomBannedUserListPaginated, //implemented on client & server
+        ClientReceiveRoomApprovedUserListPaginated, //implemented on client & server
         /// <summary>
         /// MessageFromClient
         /// </summary>
@@ -53,5 +57,7 @@ namespace LibObjects
         ServerReceiveRequestRemoveBanFromUserInRoom, //implemented on client & server
         ServerReceiveRequestApproveUserFromRoom, //implemented on client & server
         ServerReceiveRequestRemoveApproveFromUserInRoom, //implemented on client & server
+        ServerReceiveRequestRoomBannedUserList, //implemented on client & server
+        ServerReceiveRequestRoomApprovedUserList, //implemented on client & server
     }
 }

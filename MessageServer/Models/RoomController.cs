@@ -153,4 +153,14 @@ public class RoomController
 	{
 		return ServerRoomDictionary.ContainsKey(guid);
 	}
+
+	public List<User> GetBannedUserListInRoom(Room room)
+	{
+		return ServerRoomDictionary[room.GetGuid()].GetBannedList();
+	}
+	
+	public List<User> GetApprovedUserListInRoom(Room room)
+	{
+		return ServerRoomDictionary[room.GetGuid()].GetApprovedList();
+	}
 }

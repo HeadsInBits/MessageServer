@@ -34,7 +34,7 @@ namespace MessageServer.Data
 
 		public override string ToString()
 		{
-			return this._userName;
+			return _userName;
 		}
 		
 		//TODO: NOW SERIALISATION AND DESERIALIZATION IS HAPPENING HERE WE COULD:

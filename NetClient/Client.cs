@@ -20,6 +20,8 @@ namespace NetClient
 		private List<Room> tmRoomsList = new List<Room>();
 		private List<User> tmUsersList = new List<User>();
 		private Dictionary<Guid, List<User>> tmRoomsUsersListDictionary = new Dictionary<Guid, List<User>>();
+		private Dictionary<Guid, List<User>> tmRoomsBannedUsersListDictionary = new Dictionary<Guid, List<User>>();
+		private Dictionary<Guid, List<User>> tmRoomsApprovedUsersListDictionary = new Dictionary<Guid, List<User>>();
 		private List<Room> subscribedRooms = new List<Room>();
 		private bool DisconnectOnFailAuthentication = false;
 		private bool handlingUserPationation = false;
@@ -44,6 +46,8 @@ namespace NetClient
 		public event Action<Room> onRecievedRoomLeftEvent;
 		public event Action<(Room room, User user, string Message)> onRecievedRoomMessageEvent;
 		public event Action<(Room room, List<User> users)> onReceivedUsersListInRoomEvent;
+		public event Action<(Room room, List<User> users)> onReceivedApprovedUsersListInRoomEvent;
+		public event Action<(Room room, List<User> users)> onReceivedBannedUsersListInRoomEvent;
 		public event Action<(User user, string messageSent)> onReceivedMessageWasReceivedByUserEvent;
 		public event Action<(User user, string messageSent)> onReceivedCommunicationToAllEvent;
 		public event Action<(CommunicationTypeEnum comEnum, string message)> onReceivedErrorResponseFromServerEvent;
@@ -254,9 +258,29 @@ namespace NetClient
 					ReceivedUsersInRoom(messageChunks);
 					break;
 				
+				//"[ClientReceiveUsersListJsonInRoom]:[ROOM_JSON]:[USER_LIST_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomBannedUserList: 
+					ReceivedBannedUsersInRoom(messageChunks);
+					break;
+				
+				//"[ClientReceiveUsersListJsonInRoom]:[ROOM_JSON]:[USER_LIST_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomApprovedUserList: 
+					ReceivedApprovedUsersInRoom(messageChunks);
+					break;
+				
 				//"[ClientReceiveUsersListJsonInRoomPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]:[ROOM_JSON]"
 				case CommunicationTypeEnum.ClientReceiveUsersListJsonInRoomPaginated: 
 					ReceivedUsersInRoomPaginated(messageChunks);
+					break;
+				
+				//"[ClientReceiveRoomBannedUserListPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]:[ROOM_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomBannedUserListPaginated: 
+					ReceivedBannedUsersInRoomPaginated(messageChunks);
+					break;
+				
+				//"[ClientReceiveRoomApprovedUserListPaginated]:[PAGE_NUMBER(DEC)]:[INDEX_START]-[INDEX_END]:[USERS_JSON]:[ROOM_JSON]"
+				case CommunicationTypeEnum.ClientReceiveRoomApprovedUserListPaginated: 
+					ReceivedApprovedUsersInRoomPaginated(messageChunks);
 					break;
 
 				//"[ClientReceiveCommunicationToAllButSender]:[USER_JSON]:[MESSAGE]"
@@ -338,6 +362,46 @@ namespace NetClient
 				tmRoomsUsersListDictionary.Remove(room.GetGuid());
 			}
 		}
+		
+		private void ReceivedApprovedUsersInRoomPaginated(string[] messageChunks)
+		{
+
+			var page = ProcessMessageData.GetPageRoomAndUsersFromFormatStringIntStringUserListJsonRoomJson(messageChunks, 
+				out var tmUsers, out Room room);
+			if (tmRoomsApprovedUsersListDictionary.ContainsKey(room.GetGuid()))
+			{
+				tmRoomsApprovedUsersListDictionary[room.GetGuid()].AddRange(tmUsers);
+			}
+			else
+			{
+				tmRoomsApprovedUsersListDictionary.Add(room.GetGuid(),tmUsers);
+			}
+			if (page == 0)
+			{
+				onReceivedApprovedUsersListInRoomEvent?.Invoke((room, tmRoomsApprovedUsersListDictionary[room.GetGuid()]));
+				tmRoomsApprovedUsersListDictionary.Remove(room.GetGuid());
+			}
+		}
+		
+		private void ReceivedBannedUsersInRoomPaginated(string[] messageChunks)
+		{
+
+			var page = ProcessMessageData.GetPageRoomAndUsersFromFormatStringIntStringUserListJsonRoomJson(messageChunks, 
+				out var tmUsers, out Room room);
+			if (tmRoomsBannedUsersListDictionary.ContainsKey(room.GetGuid()))
+			{
+				tmRoomsBannedUsersListDictionary[room.GetGuid()].AddRange(tmUsers);
+			}
+			else
+			{
+				tmRoomsBannedUsersListDictionary.Add(room.GetGuid(),tmUsers);
+			}
+			if (page == 0)
+			{
+				onReceivedBannedUsersListInRoomEvent?.Invoke((room, tmRoomsBannedUsersListDictionary[room.GetGuid()]));
+				tmRoomsBannedUsersListDictionary.Remove(room.GetGuid());
+			}
+		}
 
 		private void ReceivedErrorResponseFromServer(string[] messageChunks)
 		{
@@ -356,6 +420,20 @@ namespace NetClient
 			List<User> users =
 				ProcessMessageData.GetUserListAndRoomFromFormatStringRoomJsonUserListJson(messageChunks, out Room room);
 			onReceivedUsersListInRoomEvent?.Invoke((room, users));
+		}
+		
+		private void ReceivedApprovedUsersInRoom(string[] messageChunks)
+		{
+			List<User> users =
+				ProcessMessageData.GetUserListAndRoomFromFormatStringRoomJsonUserListJson(messageChunks, out Room room);
+			onReceivedApprovedUsersListInRoomEvent?.Invoke((room, users));
+		}
+		
+		private void ReceivedBannedUsersInRoom(string[] messageChunks)
+		{
+			List<User> users =
+				ProcessMessageData.GetUserListAndRoomFromFormatStringRoomJsonUserListJson(messageChunks, out Room room);
+			onReceivedBannedUsersListInRoomEvent?.Invoke((room, users));
 		}
 
 		private void ReceivedMessageWasReceivedByUser(string[] messageChunks)
@@ -714,6 +792,30 @@ namespace NetClient
 			var send = new []
 			{
 				$"{(int)CommunicationTypeEnum.ServerReceiveRequestUsersListJsonInRoom}",
+				$"{roomID.ToString()}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestGetApprovedUsersInRoomAsync(Guid roomID)
+		{
+			if (tmRoomsApprovedUsersListDictionary.ContainsKey(roomID))
+				return;
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRoomApprovedUserList}",
+				$"{roomID.ToString()}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestGetBannedUsersInRoomAsync(Guid roomID)
+		{
+			if (tmRoomsBannedUsersListDictionary.ContainsKey(roomID))
+				return;
+			var send = new []
+			{
+				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRoomBannedUserList}",
 				$"{roomID.ToString()}"
 			};
 			await SendMessage(send);
