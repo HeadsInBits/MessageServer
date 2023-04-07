@@ -76,20 +76,23 @@ public partial class Form1 : Form
 
     private void NetClient_onRecievedUserDisconnectedEvent(User obj)
     {
-        netClient.RequestUserList();
+        RefreshUsersButton_Click(null, null);
     }
 
     private void NetClient_onRecievedRoomDestroyedEvent(Room obj)
     {
         MessageBox.Show(obj.GetRoomName() + " is being Destroyed \n The window will now close");
-        roomForms.Remove(GetRoomFormByGUID(obj.GetGuid()));
-        GetRoomFormByGUID(obj.GetGuid())?.Close();
+
+        RoomForm? context = GetRoomFormByGUID(obj.GetGuid());
+        roomForms.Remove(context);
+        context.Close();
     }
 
     private void NetClient_onRecievedUserLeftRoomEvent((User user, Guid roomGuid) obj)
     {
         GetRoomFormByGUID(obj.roomGuid).UpdateUserList();
         GetRoomFormByGUID(obj.roomGuid).ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": LEFT THE ROOM");
+
     }
 
     private void NetClient_onRecievedUserJoinedRoomEvent((User user, Guid roomGuid) obj)
@@ -137,11 +140,8 @@ public partial class Form1 : Form
     private void NetClientOnRecievedRoomJoinedEvent(Room obj)
     {
         //TODO
-
         roomForms.Add(new RoomForm(obj, netClient));
-
         roomForms.Last().Show();
-
     }
 
     private async void NetClientOnRecievedRoomCreatedEvent(Room obj)
@@ -173,7 +173,7 @@ public partial class Form1 : Form
     private void NetClientOnRecievedRoomListReceivedEvent(List<Room> obj)
     {
         RoomList.Items.Clear();
-        foreach (var room in netClient.GetLocalClientRoomList())
+        foreach (var room in obj)
         {
             RoomList.Items.Add(room);
             //Task.FromResult(netClient.RequestGetUsersInRoomAsync(room.GetGuid()));

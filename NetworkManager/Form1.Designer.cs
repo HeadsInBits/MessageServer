@@ -63,6 +63,7 @@ partial class Form1
         groupBox3 = new GroupBox();
         RefreshRoomsButton = new Button();
         RoomList = new ListBox();
+        UserNameLabel = new Label();
         tabControl1.SuspendLayout();
         NetworkTab.SuspendLayout();
         groupBox1.SuspendLayout();
@@ -188,6 +189,7 @@ partial class Form1
         // 
         groupBox2.AutoSize = true;
         groupBox2.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        groupBox2.Controls.Add(UserNameLabel);
         groupBox2.Controls.Add(RefreshUsersButton);
         groupBox2.Controls.Add(UserList);
         groupBox2.Dock = DockStyle.Fill;
@@ -445,6 +447,15 @@ partial class Form1
         RoomList.TabIndex = 0;
         RoomList.SelectedIndexChanged += RoomList_SelectedIndexChanged;
         // 
+        // UserNameLabel
+        // 
+        UserNameLabel.AutoSize = true;
+        UserNameLabel.Location = new Point(247, 27);
+        UserNameLabel.Name = "UserNameLabel";
+        UserNameLabel.Size = new Size(65, 15);
+        UserNameLabel.TabIndex = 3;
+        UserNameLabel.Text = "UserName:";
+        // 
         // Form1
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
@@ -463,6 +474,7 @@ partial class Form1
         UsersTab.ResumeLayout(false);
         UsersTab.PerformLayout();
         groupBox2.ResumeLayout(false);
+        groupBox2.PerformLayout();
         RoomTab.ResumeLayout(false);
         RoomTab.PerformLayout();
         groupBox4.ResumeLayout(false);
@@ -508,4 +520,5 @@ partial class Form1
     private CheckBox PublicRoomImput;
     private Label label3;
     private NumericUpDown MaxMembersInput;
+    private Label UserNameLabel;
 }

@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace LibObjects
 {
-	public class Room
+	public class Room : IEquatable<Room>
 	{
 		protected class RoomJsonData
 		{
@@ -74,57 +74,7 @@ namespace LibObjects
 		{
 			return _roomId.GetHashCode();
 		}
-		
-		
-		public static bool operator ==(Room lhs, Room rhs)
-		{
-			if (lhs is null)
-			{
-				if (rhs is null)
-				{
-					// null == null = true.
-					return true;
-				}
-
-				// Only the left side is null.
-				return false;
-			}
-			// Equals handles the case of null on right side.
-			return lhs.Equals(rhs);
-		}
-
-		public static bool operator !=(Room lhs, Room rhs)
-		{
-			return !(lhs == rhs);
-		}
-		
-		public override bool Equals(object obj) => this.Equals(obj as Room);
-
-		public bool Equals(Room p)
-		{
-			if (p is null)
-			{
-				return false;
-			}
-
-			// Optimization for a common success case.
-			if (Object.ReferenceEquals(this, p))
-			{
-				return true;
-			}
-
-			// If run-time types are not exactly the same, return false.
-			if (this.GetType() != p.GetType())
-			{
-				return false;
-			}
-
-			// Return true if the fields match.
-			// Note that the base class is not invoked because it is
-			// System.Object, which defines Equals as reference equality.
-			return p.GetGuid() == GetGuid();
-		}
-
+			
 		protected Room()
 		{
 			
@@ -215,5 +165,12 @@ namespace LibObjects
 		{
 			return _creator;
 		}
-	}
+
+        public bool Equals(Room other)
+        {
+           if(this.GetGuid == other.GetGuid && this._isPublic == other._isPublic && this._roomName == other._roomName)
+				return true;
+		   else return false;
+        }
+    }
 }
