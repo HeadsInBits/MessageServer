@@ -409,7 +409,8 @@ namespace NetClient
 
 		private void ReceivedErrorResponseFromServer(string[] messageChunks)
 		{
-			onReceivedErrorResponseFromServerEvent?.Invoke(((CommunicationTypeEnum)int.Parse(messageChunks [1]),messageChunks[2]));
+		    Enum.TryParse(messageChunks[1], out CommunicationTypeEnum s);
+            onReceivedErrorResponseFromServerEvent?.Invoke((s,messageChunks[2]));
 		}
 
 		private void ReceivedCommunicationToAll(string[] messageChunks)
