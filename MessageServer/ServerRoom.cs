@@ -81,12 +81,13 @@ public class ServerRoom: Room
             if (user._userName == usrToRemove.GetUserName())
             {
                 _usersInRoom.Remove(user);
+                return RoomStatusCodes.Ok;
             }
 
         }
 
-	    _usersInRoom.Remove(usrToRemove);
-	    return RoomStatusCodes.Ok;
+        return RoomStatusCodes.Ok;
+	    
     }
 
     public RoomStatusCodes BanUserFromRoom(User usrToBan)
@@ -102,7 +103,7 @@ public class ServerRoom: Room
     
     public RoomStatusCodes ApproveUserFromRoom(User usrToApprove)
     {
-	    _approvedList.Add(usrToApprove);
+        _approvedList.Add(usrToApprove);
 	    return RoomStatusCodes.Ok;
     }
     public RoomStatusCodes RemoveApproveFromUserFromRoom(User usrToUnApprove)

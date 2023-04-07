@@ -71,6 +71,12 @@ public partial class Form1 : Form
         netClient.onRecievedUserJoinedRoomEvent += NetClient_onRecievedUserJoinedRoomEvent;
         netClient.onRecievedUserLeftRoomEvent += NetClient_onRecievedUserLeftRoomEvent;
         netClient.onRecievedRoomDestroyedEvent += NetClient_onRecievedRoomDestroyedEvent;
+        netClient.onRecievedUserDisconnectedEvent += NetClient_onRecievedUserDisconnectedEvent;
+    }
+
+    private void NetClient_onRecievedUserDisconnectedEvent(User obj)
+    {
+        netClient.RequestUserList();
     }
 
     private void NetClient_onRecievedRoomDestroyedEvent(Room obj)

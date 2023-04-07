@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace MessageServer.Data
 {
-	public class User
+	public class User : IEquatable<User>
 	{
 		public string _userName;
 		public bool _isValidated;
@@ -22,7 +22,20 @@ namespace MessageServer.Data
 
 		public static readonly int NumberOfUsersToSendInMessage = 20;
 
-		public string GetUserName()
+		public virtual bool Equals(User other) { 
+				if(other._isValidated.ToString() == _isValidated.ToString() && other.GetUserName() == _userName && other.WebSocketID == WebSocketID && other.GetUserGuid() == Guid)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		
+		}
+
+
+        public string GetUserName()
 		{
 			return _userName;
 		}
@@ -74,5 +87,7 @@ namespace MessageServer.Data
 		{
 			return WebSocketID;
 		}
-	}
+
+       
+    }
 }
