@@ -135,6 +135,10 @@ namespace NetClient
 			return ClientName;
 		}
 
+		public User GetUser() {
+			return ClientUser;
+		}
+
 		
 		private bool ProcessIncomingMessage(string message)
 		{
@@ -142,9 +146,9 @@ namespace NetClient
 			onIncomingWebSocketMessageEvent?.Invoke(message);
 
 			string [] messageChunks = ProcessMessageData.UnpackMessageSafe(message);
+            Enum.TryParse(messageChunks[0], out CommunicationTypeEnum s);
 
-			var s = (CommunicationTypeEnum)int.Parse(messageChunks [0]);
-			switch (s) {
+            switch (s) {
 				
 				//"[ClientReceiveAuthenticated]:OK" / "[ClientReceiveAuthenticated]:FAILED"
 				case CommunicationTypeEnum.ClientReceiveAuthenticated: 
@@ -589,7 +593,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveMessageReceivedSuccessfully}",
+				$"{CommunicationTypeEnum.ServerReceiveMessageReceivedSuccessfully}",
 				$"{User.GetJsonFromUser(user)}",
 				$"{message}"
 			};
@@ -600,7 +604,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestClientGuid}"
+				$"{CommunicationTypeEnum.ServerReceiveRequestClientGuid}"
 			};
 			await SendMessage(send);
 		}
@@ -609,7 +613,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestUserFromGuid}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestUserFromGuid}",
 				$"{guid.ToString()}"
 			};
 			await SendMessage(send);
@@ -619,7 +623,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestAddUserToRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestAddUserToRoom}",
 				$"{roomID.ToString()}",
 				$"{user.GetUserName()}"
 			};
@@ -630,7 +634,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestCreateRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestCreateRoom}",
 				$"{roomSize.ToString()}",
 				$"{(isPublic?"PUBLIC":"PRIVATE")}",
 				$"{meta}",
@@ -647,7 +651,7 @@ namespace NetClient
 			}
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestUserListJson}"
+				$"{CommunicationTypeEnum.ServerReceiveRequestUserListJson}"
 			};
 			Task.FromResult(SendMessage(send));
 			return true;
@@ -661,7 +665,7 @@ namespace NetClient
 			}
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRoomListJson}"
+				$"{CommunicationTypeEnum.ServerReceiveRequestRoomListJson}"
 			};
 			Task.FromResult(SendMessage(send));
 			return false;
@@ -671,7 +675,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveAuthenticate}",
+				$"{CommunicationTypeEnum.ServerReceiveAuthenticate}",
 				$"{userName}",
 				$"{passWord}"
 			};
@@ -682,7 +686,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestLockRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestLockRoom}",
 				$"{Room.GetJsonFromRoom(room)}"
 			};
 			await SendMessage(send);
@@ -692,7 +696,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestUnlockRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestUnlockRoom}",
 				$"{Room.GetJsonFromRoom(room)}"
 			};
 			await SendMessage(send);
@@ -702,7 +706,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRemoveUserFromRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestRemoveUserFromRoom}",
 				$"{User.GetJsonFromUser(user)}",
 				$"{Room.GetJsonFromRoom(room)}"
 			};
@@ -713,7 +717,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestBanUserFromRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestBanUserFromRoom}",
 				$"{User.GetJsonFromUser(user)}",
 				$"{Room.GetJsonFromRoom(room)}"
 			};
@@ -724,7 +728,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRemoveBanFromUserInRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestRemoveBanFromUserInRoom}",
 				$"{User.GetJsonFromUser(user)}",
 				$"{Room.GetJsonFromRoom(room)}"
 			};
@@ -735,7 +739,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestApproveUserFromRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestApproveUserFromRoom}",
 				$"{User.GetJsonFromUser(user)}",
 				$"{Room.GetJsonFromRoom(room)}"
 			};
@@ -746,7 +750,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRemoveApproveFromUserInRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestRemoveApproveFromUserInRoom}",
 				$"{User.GetJsonFromUser(user)}",
 				$"{Room.GetJsonFromRoom(room)}"
 			};
@@ -758,7 +762,7 @@ namespace NetClient
 			var userJson = User.GetJsonFromUser(user);
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestSendMessageToUser}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestSendMessageToUser}",
 				$"{userJson}",
 				$"{message}"
 			};
@@ -768,7 +772,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveSendMessageToRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveSendMessageToRoom}",
 				$"{roomGuid.ToString()}",
 				$"{message}"
 			};
@@ -779,7 +783,7 @@ namespace NetClient
 		{
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestSendMessageToAll}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestSendMessageToAll}",
 				$"{message}"
 			};
 			await SendMessage(send);
@@ -791,7 +795,7 @@ namespace NetClient
 				return;
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestUsersListJsonInRoom}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestUsersListJsonInRoom}",
 				$"{roomID.ToString()}"
 			};
 			await SendMessage(send);
@@ -803,7 +807,7 @@ namespace NetClient
 				return;
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRoomApprovedUserList}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestRoomApprovedUserList}",
 				$"{roomID.ToString()}"
 			};
 			await SendMessage(send);
@@ -815,7 +819,7 @@ namespace NetClient
 				return;
 			var send = new []
 			{
-				$"{(int)CommunicationTypeEnum.ServerReceiveRequestRoomBannedUserList}",
+				$"{CommunicationTypeEnum.ServerReceiveRequestRoomBannedUserList}",
 				$"{roomID.ToString()}"
 			};
 			await SendMessage(send);

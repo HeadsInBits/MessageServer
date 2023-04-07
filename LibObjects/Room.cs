@@ -145,14 +145,42 @@ namespace LibObjects
 			return _roomId;
 		}
 
-		//TODO: NOW SERIALISATION AND DESERIALIZATION IS HAPPENING HERE WE COULD:
-		//1. CHANGE THE FORMAT
-		//2. VALIDATE ALL IN ONE PLACE
-		//3. RESTRICT DATA BEING PASSED
-		//4. OPTIMISE FOR DATA SIZE
-		//5. ENCRYPT?
+		public DateTime GetCreationDate()
+		{
+			return _roomCreation;
 
-		public static List<Room> GetRoomListFromJson(string jsonData)
+        }
+
+		public int GetRoomLimit()
+		{
+			return _roomLimit;
+		}
+
+		public bool GetAccessLevel()
+		{
+			return _isPublic;
+		}
+
+		public bool GetIsRoomLocked()
+		{
+			return _isRoomLocked;
+		}
+
+        public override string ToString()
+        {
+            return _roomName.ToString();
+        }
+
+
+
+        //TODO: NOW SERIALISATION AND DESERIALIZATION IS HAPPENING HERE WE COULD:
+        //1. CHANGE THE FORMAT
+        //2. VALIDATE ALL IN ONE PLACE
+        //3. RESTRICT DATA BEING PASSED
+        //4. OPTIMISE FOR DATA SIZE
+        //5. ENCRYPT?
+
+        public static List<Room> GetRoomListFromJson(string jsonData)
 		{
 			List<RoomJsonData> roomJsonDataList = JsonConvert.DeserializeObject<List<RoomJsonData>>(jsonData);
 			List<Room> rooms = new List<Room>();

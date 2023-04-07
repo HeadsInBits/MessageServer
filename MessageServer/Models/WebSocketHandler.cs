@@ -144,8 +144,8 @@ public class WebSocketHandler
 	private void ProcessMessage(int index, string message)
 	{
 		string [] messageChunks = ProcessMessageData.UnpackMessageSafe(message);
-
-		var s = (CommunicationTypeEnum)(int.Parse(messageChunks [0]));
+		Enum.TryParse(messageChunks[0], out CommunicationTypeEnum s);
+    
 		switch (s) {
 			
 			//"[ServerReceiveAuthenticate]:[USER_NAME_STRING]:[PASSWORD_STRING]"
@@ -502,7 +502,7 @@ public class WebSocketHandler
 	{
 		List<Room> roomList = _roomController.GetRoomsList();
 		int count = roomList.Count;
-		int sentNumber = (int)MathF.Ceiling((float)count / Room.NumberOfRoomsToSendInMessage)-1;
+		int sentNumber = (int) MathF.Ceiling((float)count / Room.NumberOfRoomsToSendInMessage)-1;
 		if (count > Room.NumberOfRoomsToSendInMessage)
 		{
 			while (count > 0)
@@ -516,7 +516,7 @@ public class WebSocketHandler
 				}
 				var send = new []
 				{
-					$"{(int) CommunicationTypeEnum.ClientReceiveRoomListJsonPaginated}",
+					$"{ CommunicationTypeEnum.ClientReceiveRoomListJsonPaginated}",
 					$"{sentNumber}",
 					$"{count}-{count+c}",
 					$"{Room.GetJsonFromRoomList(list)}"
@@ -686,7 +686,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveErrorResponseFromServer}",
+			$"{ CommunicationTypeEnum.ClientReceiveErrorResponseFromServer}",
 			$"{s}",
 			$"{errorMessage}"
 		};
@@ -697,7 +697,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveRemovedFromTheRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveRemovedFromTheRoom}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
@@ -707,7 +707,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveUserLeftRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveUserLeftRoom}",
 			$"{inRoom}",
 			$"{userJson}"
 		};
@@ -718,7 +718,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveRoomDestroyed}",
+			$"{ CommunicationTypeEnum.ClientReceiveRoomDestroyed}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
@@ -728,7 +728,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveUserDisconnected}",
+			$"{ CommunicationTypeEnum.ClientReceiveUserDisconnected}",
 			$"{User.GetJsonFromUser(userDisconnected)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(userToSentTo), send);
@@ -738,7 +738,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveRoomCreated}",
+			$"{ CommunicationTypeEnum.ClientReceiveRoomCreated}",
 			$"{createdRoomJason}"
 		};
 		SendMessage(index, send);
@@ -748,7 +748,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveJoinedRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveJoinedRoom}",
 			$"{createdRoomJason}"
 		};
 		SendMessage(index, send);
@@ -758,7 +758,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveJoinedRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveJoinedRoom}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
@@ -768,7 +768,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveBannedFromRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveBannedFromRoom}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
@@ -778,7 +778,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveNoLongerBannedFromRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveNoLongerBannedFromRoom}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
@@ -788,7 +788,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveApprovedForRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveApprovedForRoom}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
@@ -798,7 +798,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveNoLongerApprovedForRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveNoLongerApprovedForRoom}",
 			$"{Room.GetJsonFromRoom(room)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(user), send);
@@ -808,7 +808,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveLeftRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveLeftRoom}",
 			$"{Room.GetJsonFromRoom(userRemovedFromRoom)}"
 		};
 		SendMessage(_userController.GetWebSocketIdFromUser(userProfile), send);
@@ -818,7 +818,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveUserJoinedRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveUserJoinedRoom}",
 			$"{roomGUID.ToString()}",
 			$"{jsonUser}"
 		};
@@ -830,7 +830,7 @@ public class WebSocketHandler
 		string users = User.GetJsonFromUsersList(_userController.connectedClients);
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveUserListJson}",
+			$"{ CommunicationTypeEnum.ClientReceiveUserListJson}",
 			$"{users}"
 		};
 		SendMessage(index, send);
@@ -845,7 +845,7 @@ public class WebSocketHandler
 			{
 				var send = new[]
 				{
-					$"{(int) CommunicationTypeEnum.ClientReceiveMessageFromUser}",
+					$"{ CommunicationTypeEnum.ClientReceiveMessageFromUser}",
 					$"{User.GetJsonFromUser(_userController.GetUserProfileFromSocketId(index))}",
 					$"{message}"
 				};
@@ -858,7 +858,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveAuthenticated}",
+			$"{ CommunicationTypeEnum.ClientReceiveAuthenticated}",
 			$"OK"
 		};
 		SendMessage(index, send);
@@ -868,7 +868,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveAuthenticated}",
+			$"{ CommunicationTypeEnum.ClientReceiveAuthenticated}",
 			$"FAILED"
 		};
 		SendMessage(index, send);
@@ -878,7 +878,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveRoomListJson}",
+			$"{ CommunicationTypeEnum.ClientReceiveRoomListJson}",
 			$"{Room.GetJsonFromRoomList(rooms)}"
 		};
 		SendMessage(index, send);
@@ -888,7 +888,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveClientGuid}",
+			$"{ CommunicationTypeEnum.ClientReceiveClientGuid}",
 			$"{user.GetUserGuid()}"
 		};
 		SendMessage(index, send);
@@ -898,7 +898,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveUserInfo}",
+			$"{ CommunicationTypeEnum.ClientReceiveUserInfo}",
 			$"{User.GetJsonFromUser(user)}"
 		};
 		SendMessage(index, send);
@@ -907,7 +907,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) command}",
+			$"{ command}",
 			$"{sentNumber}",
 			$"{count}-{count + c}",
 			$"{User.GetJsonFromUsersList(list)}"
@@ -919,7 +919,7 @@ public class WebSocketHandler
 	{
 		var send = new []
 		{
-			$"{(int) command}",
+			$"{ command}",
 			$"{sentNumber}",
 			$"{count}-{count + c}",
 			$"{User.GetJsonFromUsersList(list)}",
@@ -936,7 +936,7 @@ public class WebSocketHandler
 		int i = _userController.GetWebSocketIdFromUser(user);
 		var send = new []
 		{
-			$"{(int)CommunicationTypeEnum.ClientReceiveMessageSentSuccessful}",
+			$"{CommunicationTypeEnum.ClientReceiveMessageSentSuccessful}",
 			$"{User.GetJsonFromUser(Reciever)}",
 			$"{message}"
 		};
@@ -950,7 +950,7 @@ public class WebSocketHandler
 			if (sockets [i] != null && i != index) {
 				var send = new []
 				{
-					$"{(int)CommunicationTypeEnum.ClientReceiveCommunicationToAll}",
+					$"{CommunicationTypeEnum.ClientReceiveCommunicationToAll}",
 					$"{User.GetJsonFromUser(user)}",
 					$"{message}"
 				};
@@ -964,7 +964,7 @@ public class WebSocketHandler
 		
 		var send = new[]
 		{
-			$"{(int) CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom}",
+			$"{ CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom}",
 			$"{Room.GetJsonFromRoom(r)}",
 			$"{User.GetJsonFromUsersList(users)}"
 		};
@@ -976,7 +976,7 @@ public class WebSocketHandler
 		int sendIndex = _userController.GetWebSocketIdFromUser(toUser);
 		var send = new []
 		{
-			$"{(int)CommunicationTypeEnum.ClientReceiveRoomMessage}",
+			$"{CommunicationTypeEnum.ClientReceiveRoomMessage}",
 			$"{User.GetJsonFromUser(fromUser)}",
 			$"{Room.GetJsonFromRoom(room)}",
 			$"{messageToSend}"
