@@ -52,6 +52,11 @@ namespace NetworkManager
             }
         }
 
+        public void UpdateUserList()
+        {
+            RefreshUsersButton_Click(null, null);
+        }
+
         private void RoomForm_FormClosing(object sender, FormClosingEventArgs e) => myClient.RequestRemoveUserFromRoom(thisRoom, myClient.GetUser());
 
         private void RefreshUsersButton_Click(object sender, EventArgs e)

@@ -31,7 +31,6 @@ public partial class Form1 : Form
 
     private async void RunLogin()
     {
-
         await netClient.Connect("localhost", "8080");
         await Task.FromResult(netClient.Listen());
         await Task.FromResult(netClient.RequestAuthenticate(UserInput.Text, PasswordInput.Text));
@@ -56,7 +55,7 @@ public partial class Form1 : Form
             return;
         }
 
-        netClient.RequestCreateRoom("NETWORK_MANAGER APP", (int)MaxMembersInput.Value, PublicRoomImput.Checked, RoomNameInput.Text);
+        netClient.RequestCreateRoom("Network-Manager.ChatApp", (int)MaxMembersInput.Value, PublicRoomImput.Checked, RoomNameInput.Text);
     }
 
     private void Form1_Load(object sender, EventArgs e)
@@ -69,6 +68,28 @@ public partial class Form1 : Form
         netClient.onRecievedUserListEvent += NetClientOnRecievedUserListReceivedEvent;
         netClient.onRecievedRoomMessageEvent += NetClientOnRecievedRoomMessageEvent;
         netClient.onReceivedUsersListInRoomEvent += NetClient_onReceivedUsersListInRoomEvent;
+        netClient.onRecievedUserJoinedRoomEvent += NetClient_onRecievedUserJoinedRoomEvent;
+        netClient.onRecievedUserLeftRoomEvent += NetClient_onRecievedUserLeftRoomEvent;
+        netClient.onRecievedRoomDestroyedEvent += NetClient_onRecievedRoomDestroyedEvent;
+    }
+
+    private void NetClient_onRecievedRoomDestroyedEvent(Room obj)
+    {
+        MessageBox.Show(obj.GetRoomName() + " is being Destroyed \n The window will now close");
+        roomForms.Remove(GetRoomFormByGUID(obj.GetGuid()));
+        GetRoomFormByGUID(obj.GetGuid())?.Close();
+    }
+
+    private void NetClient_onRecievedUserLeftRoomEvent((User user, Guid roomGuid) obj)
+    {
+        GetRoomFormByGUID(obj.roomGuid).UpdateUserList();
+        GetRoomFormByGUID(obj.roomGuid).ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": LEFT THE ROOM");
+    }
+
+    private void NetClient_onRecievedUserJoinedRoomEvent((User user, Guid roomGuid) obj)
+    {
+        GetRoomFormByGUID(obj.roomGuid).UpdateUserList();
+        GetRoomFormByGUID(obj.roomGuid).ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": JOINED THE ROOM");
     }
 
     private RoomForm? GetRoomFormByGUID(Guid roomID)
@@ -87,7 +108,7 @@ public partial class Form1 : Form
     private void NetClient_onReceivedUsersListInRoomEvent((Room room, List<User> users) obj)
     {
 
-        GetRoomFormByGUID(obj.room.GetGuid()).ProcessIncomingUserList(obj.users);
+        GetRoomFormByGUID(obj.room.GetGuid())?.ProcessIncomingUserList(obj.users);
         //throw new NotImplementedException();
     }
 
@@ -149,7 +170,7 @@ public partial class Form1 : Form
         foreach (var room in netClient.GetLocalClientRoomList())
         {
             RoomList.Items.Add(room);
-            Task.FromResult(netClient.RequestGetUsersInRoomAsync(room.GetGuid()));
+            //Task.FromResult(netClient.RequestGetUsersInRoomAsync(room.GetGuid()));
         }
     }
 
@@ -175,6 +196,9 @@ public partial class Form1 : Form
     private void JoinRoomButton_Click(object sender, EventArgs e)
     {
         Room roomToJoin = RoomList.SelectedItem as Room;
+        if (roomToJoin == null)
+            return;
+
         netClient.RequestToAddUserToRoom(netClient.GetUser(), roomToJoin.GetGuid());
 
     }
@@ -187,7 +211,7 @@ public partial class Form1 : Form
     private void RoomList_SelectedIndexChanged(object sender, EventArgs e)
     {
         Room roomInfo = RoomList.SelectedItem as Room;
-        // if (roomInfo != null) {return; }
+        if (roomInfo == null) { return; }
 
         RoomNameLabel.Text = "Room Name: " + roomInfo.GetRoomName();
         RoomCreatorLabel.Text = "Room Creator: " + roomInfo.GetCreator().GetUserName();
