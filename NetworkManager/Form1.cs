@@ -93,7 +93,7 @@ public partial class Form1 : Form
 
     private void NetClientOnRecievedRoomMessageEvent((Room room, User user, string Message) obj)
     {
-        MessageBox.Show($"Got Message from Room{obj.room.GetGuid()} :- {obj.Message}");
+        //MessageBox.Show($"Got Message from Room{obj.room.GetGuid()} :- {obj.Message}");
 
         GetRoomFormByGUID(obj.room.GetGuid()).ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": " + obj.Message);
 
