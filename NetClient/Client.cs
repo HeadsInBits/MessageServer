@@ -53,6 +53,7 @@ namespace NetClient
 		public event Action<Guid> onRecievedGuid;
 		public event Action<(User user, Guid guid)> onRecievedUserWithGuidEvent;
 		public event Action<User> onUserDisconnected;
+		public event Action<User> onUserLoggedIn;
         public event Action<User> onUserConnent;
 		
 		//FOR DEBUGGING
@@ -149,13 +150,18 @@ namespace NetClient
             Enum.TryParse(messageChunks[0], out CommunicationTypeEnum s);
 
             switch (s) {
-				
+		            
 				//"[ClientReceiveAuthenticated]:OK" / "[ClientReceiveAuthenticated]:FAILED"
 				case CommunicationTypeEnum.ClientReceiveAuthenticated: 
 					if (!ReceivedAuthenticate(messageChunks))
 						return false;
 					else
 						break;
+				
+				//"[ClientReceiveUserLoggedIn]:[USER_JSON]:[MESSAGE_STRING]"
+				case CommunicationTypeEnum.ClientReceiveUserLoggedIn: 
+					ReceivedUserSignedIn(messageChunks);
+					break;
 
 				//"[ClientReceiveMessageSentSuccessful]:[USER_JSON]:[MESSAGE_STRING]"
 				case CommunicationTypeEnum.ClientReceiveMessageSentSuccessful: 
@@ -309,6 +315,12 @@ namespace NetClient
 
 			return true;
 
+		}
+
+		private void ReceivedUserSignedIn(string[] messageChunks)
+		{
+			User user = ProcessMessageData.GetUserFromMessageFormatStringJsonUser(messageChunks);
+			onUserLoggedIn?.Invoke(user);
 		}
 
 		private void ReceiveUserDisconnected(string[] messageChunks)

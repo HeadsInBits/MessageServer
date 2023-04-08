@@ -35,6 +35,7 @@ namespace LibObjects
         ClientReceiveRoomApprovedUserList, //implemented on client & server
         ClientReceiveRoomBannedUserListPaginated, //implemented on client & server
         ClientReceiveRoomApprovedUserListPaginated, //implemented on client & server
+        ClientReceiveUserLoggedIn, //implemented on client & server
         /// <summary>
         /// MessageFromClient
         /// </summary>

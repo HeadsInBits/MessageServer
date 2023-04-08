@@ -738,6 +738,13 @@ public class WebSocketHandler
 				Console.WriteLine("User Already Authenticated: " + index + "User:" + tmpUser.GetUserName());
 			}
 
+			foreach (var user in _userController.GetConnectedClients())
+			{
+				if (user.GetUserName() != tmpUser.GetUserName())
+				{
+					SendUserLoggedIn(_userController.GetWebSocketIdFromUser(user), tmpUser);
+				}
+			}
 			SendAuthenticationPassed(index);
 		}
 		else // not authenticated
@@ -745,7 +752,9 @@ public class WebSocketHandler
 			SendAuthenticationFailed(index);
 		}
 	}
+
 	
+
 	private void SendErrorMessage(int index, CommunicationTypeEnum s, string errorMessage)
 	{
 		var send = new []
@@ -1026,12 +1035,21 @@ public class WebSocketHandler
 
 	private void SendUserListJsonInRoom(int index, Room r, List<User> users, CommunicationTypeEnum com)
 	{
-		
 		var send = new[]
 		{
 			$"{com}",
 			$"{Room.GetJsonFromRoom(r)}",
 			$"{User.GetJsonFromUsersList(users)}"
+		};
+		SendMessage(index, send);
+	}
+	
+	private void SendUserLoggedIn(int index, User tmpUser)
+	{
+		var send = new[]
+		{
+			$"{CommunicationTypeEnum.ClientReceiveUserLoggedIn}",
+			$"{User.GetJsonFromUser(tmpUser)}"
 		};
 		SendMessage(index, send);
 	}
