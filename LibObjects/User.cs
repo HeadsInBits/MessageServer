@@ -115,5 +115,17 @@ namespace LibObjects
             return _guid;
         }
 
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 23 + _isValidated.GetHashCode();
+                hash = hash * 23 + (_userName != null ? _userName.GetHashCode() : 0);
+                hash = hash * 23 + _guid.GetHashCode();
+                return hash;
+            }
+        }
+
     }
 }

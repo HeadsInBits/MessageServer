@@ -132,6 +132,21 @@ public class WebSocketHandler
         }
     }
 
+    private void RemoveUserFromSubscribedRooms(int index)
+    {
+        User? userDisconnected = _userController.GetUserProfileFromSocketId(index);
+
+        foreach (var room in _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected))
+        {
+            _roomController.GetServerRoomFromGUID(room).RemoveUserFromRoom(userDisconnected);
+
+            foreach (var usr in _roomController.GetServerRoomFromGUID(room).GetUsersInRoom())
+            {
+                SendUserLeftRoom(usr, room, User.GetJsonFromUser(userDisconnected));
+            }
+        }
+
+    }
 
 	private void OldDisconnectCode(int index)
 	{
