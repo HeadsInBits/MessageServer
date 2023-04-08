@@ -31,7 +31,7 @@ public partial class Form1 : Form
 
     private async void RunLogin()
     {
-        await netClient.Connect("localhost", "8080");
+        await netClient.Connect(AddressInput.Text, PortInput.Text);
         await Task.FromResult(netClient.Listen());
         await Task.FromResult(netClient.RequestAuthenticate(UserInput.Text, PasswordInput.Text));
     }
