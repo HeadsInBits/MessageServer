@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using MessageServer.Data;
 using Newtonsoft.Json;
 
 namespace LibObjects
 {
-	public class Room : IEquatable<Room>
+    public class Room : IEquatable<Room>
 	{
 		protected class RoomJsonData
 		{

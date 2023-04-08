@@ -1,5 +1,4 @@
 ﻿using LibObjects;
-using MessageServer.Data;
 using System.Windows.Forms;
 
 namespace NetworkManager
