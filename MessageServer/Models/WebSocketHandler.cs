@@ -1007,7 +1007,7 @@ public class WebSocketHandler
 		
 		var send = new[]
 		{
-			$"{ CommunicationTypeEnum.ClientReceiveUsersListJsonInRoom}",
+			$"{com}",
 			$"{Room.GetJsonFromRoom(r)}",
 			$"{User.GetJsonFromUsersList(users)}"
 		};
