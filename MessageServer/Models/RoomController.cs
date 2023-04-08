@@ -128,7 +128,7 @@ public class RoomController
 	
 	public bool IsCreatorOfRoom(Room room, User user)
 	{
-		if (ServerRoomDictionary[room.GetGuid()].GetCreator().GetUserName() == user.GetUserName())
+		if (ServerRoomDictionary[room.GetGuid()].GetCreator() == user.GetUserName())
 		{
 			return true;
 		}

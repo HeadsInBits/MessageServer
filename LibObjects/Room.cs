@@ -14,7 +14,7 @@ namespace LibObjects
 			public string RoomName;
 			public bool IsRoomLocked;
 			public DateTime RoomCreation;
-			public User Creator;
+			public string Creator;
 			public int RoomLimit;
 			public bool IsPublic;
 			public string Meta;
@@ -64,7 +64,7 @@ namespace LibObjects
 		protected string _roomName;
 		protected bool _isRoomLocked;
 		protected DateTime _roomCreation = DateTime.Now;
-		protected User _creator;
+		protected string _creator;
 		protected int _roomLimit;
 		protected bool _isPublic;
 		protected string _meta;
@@ -161,7 +161,7 @@ namespace LibObjects
 			return JsonConvert.SerializeObject(room.GetJsonDataFromRoom(), Formatting.Indented);
 		}
 
-		public User GetCreator()
+		public string GetCreator()
 		{
 			return _creator;
 		}

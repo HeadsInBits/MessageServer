@@ -77,7 +77,7 @@ public class WebSocketHandler
 							var inRoom = findAllRoomsWhereUserInRoom[i];
 							Room room = _roomController.GetServerRoomFromGUID(inRoom);
 							var usersInRoom = _roomController.GetUsersInRoom(room);
-							bool isOwner = room.GetCreator() == userDisconnected;
+							bool isOwner = room.GetCreator() == userDisconnected.GetUserName();
 							if (_roomController.IsInRoom(room, userDisconnected))
 							{
 								_roomController.RemoveUserFromServerRoom(userDisconnected, room);

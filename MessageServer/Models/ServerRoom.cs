@@ -23,7 +23,7 @@ public class ServerRoom: Room
     
     public ServerRoom(User creator, int roomLimit, bool isPublic, string meta, string roomName) : base()
     {
-    	_creator = creator;
+    	_creator = creator.GetUserName();
     	_roomLimit = roomLimit;
     	_isPublic = isPublic;
     	_usersInRoom.Add(creator);
@@ -53,7 +53,7 @@ public class ServerRoom: Room
 		    return RoomStatusCodes.Banned;
 	    }
 	    
-	    if (!_isPublic && !_approvedList.Contains(usrToAdd) && requestedBy.GetUserName() != _creator.GetUserName())
+	    if (!_isPublic && !_approvedList.Contains(usrToAdd) && requestedBy.GetUserName() != _creator)
 	    {
 		    return RoomStatusCodes.Private;
 	    }
