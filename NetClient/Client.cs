@@ -29,31 +29,31 @@ namespace NetClient
 		
 
 		//Events
-		public event Action<(User user, string message)> onRecievedMessageFromUserEvent;
-		public event Action<bool> onReceivedAuthenticateEvent;
-		public event Action<Room> onRecievedRoomDestroyedEvent;
-		public event Action<List<User>> onRecievedUserListEvent;
-		public event Action<(User user, Guid roomGuid)> onRecievedUserJoinedRoomEvent;
-		public event Action<(User user, Guid roomGuid)> onRecievedUserLeftRoomEvent;
-		public event Action<List<Room>> onRecievedRoomListEvent;
-		public event Action<Room> onRecievedRoomCreatedEvent;
-		public event Action<Room> onRecievedRemovedFromTheRoomEvent;
-		public event Action<Room> onRecievedBannedFromRoomEvent;
-		public event Action<Room> onRecievedNoLongerBannedFromRoomEvent;
-		public event Action<Room> onRecievedApprovedForRoomEvent;
-		public event Action<Room> onRecievedNoLongerApprovedForRoomEvent;
-		public event Action<Room> onRecievedRoomJoinedEvent;
-		public event Action<Room> onRecievedRoomLeftEvent;
-		public event Action<(Room room, User user, string Message)> onRecievedRoomMessageEvent;
-		public event Action<(Room room, List<User> users)> onReceivedUsersListInRoomEvent;
-		public event Action<(Room room, List<User> users)> onReceivedApprovedUsersListInRoomEvent;
-		public event Action<(Room room, List<User> users)> onReceivedBannedUsersListInRoomEvent;
-		public event Action<(User user, string messageSent)> onReceivedMessageWasReceivedByUserEvent;
-		public event Action<(User user, string messageSent)> onReceivedCommunicationToAllEvent;
-		public event Action<(CommunicationTypeEnum comEnum, string message)> onReceivedErrorResponseFromServerEvent;
-		public event Action<Guid> onRecievedGuidEvent;
+		public event Action<(User user, string message)> onMessageFromUser;
+		public event Action<bool> onAuthenticate;
+		public event Action<Room> onRoomDestroyed;
+		public event Action<List<User>> onUserList;
+		public event Action<(User user, Guid roomGuid)> onUserJoinedRoom;
+		public event Action<(User user, Guid roomGuid)> onUserLeftRoom;
+		public event Action<List<Room>> onRoomList;
+		public event Action<Room> onRoomCreated;
+		public event Action<Room> onRemovedFromRoom;
+		public event Action<Room> onBannedFromRoom;
+		public event Action<Room> onNoLongerBannedFromRoom;
+		public event Action<Room> onApprovedForRoom;
+		public event Action<Room> onNoLongerApprovedForRoom;
+		public event Action<Room> onRoomJoined;
+		public event Action<Room> onRoomLeft;
+		public event Action<(Room room, User user, string Message)> onRoomMessage;
+		public event Action<(Room room, List<User> users)> onUsersListInRoom;
+		public event Action<(Room room, List<User> users)> onApprovedUsersListInRoom;
+		public event Action<(Room room, List<User> users)> onBannedUsersListInRoom;
+		public event Action<(User user, string messageSent)> onMessageWasReceivedByUser;
+		public event Action<(User user, string messageSent)> onCommunicationToAll;
+		public event Action<(CommunicationTypeEnum comEnum, string message)> onErrorResponseFromServer;
+		public event Action<Guid> onRecievedGuid;
 		public event Action<(User user, Guid guid)> onRecievedUserWithGuidEvent;
-		public event Action<User> onRecievedUserDisconnectedEvent;
+		public event Action<User> onUserDisconnected;
 		
 		//FOR DEBUGGING
 		public event Action<string> onMessageSentToSocketEvent;
@@ -314,37 +314,37 @@ namespace NetClient
 		private void ReceiveUserDisconnected(string[] messageChunks)
 		{
 			User user = ProcessMessageData.GetUserFromMessageFormatStringJsonUser(messageChunks);
-			onRecievedUserDisconnectedEvent?.Invoke(user);
+			onUserDisconnected?.Invoke(user);
 		}
 
 		private void ReceivedNoLongerApprovedForRoom(string[] messageChunks)
 		{
 			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
-			onRecievedNoLongerApprovedForRoomEvent?.Invoke(fromJson);
+			onNoLongerApprovedForRoom?.Invoke(fromJson);
 		}
 
 		private void ReceivedApprovedForRoom(string[] messageChunks)
 		{
 			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
-			onRecievedApprovedForRoomEvent?.Invoke(fromJson);
+			onApprovedForRoom?.Invoke(fromJson);
 		}
 
 		private void ReceivedNoLongerBannedFromRoom(string[] messageChunks)
 		{
 			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
-			onRecievedNoLongerBannedFromRoomEvent?.Invoke(fromJson);
+			onNoLongerBannedFromRoom?.Invoke(fromJson);
 		}
 
 		private void ReceivedBannedFromRoom(string[] messageChunks)
 		{
 			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
-			onRecievedBannedFromRoomEvent?.Invoke(fromJson);
+			onBannedFromRoom?.Invoke(fromJson);
 		}
 
 		private void ReceivedRemovedFromTheRoom(string[] messageChunks)
 		{
 			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
-			onRecievedRemovedFromTheRoomEvent?.Invoke(fromJson);
+			onRemovedFromRoom?.Invoke(fromJson);
 		}
 
 		private void ReceivedUsersInRoomPaginated(string[] messageChunks)
@@ -362,7 +362,7 @@ namespace NetClient
 			}
 			if (page == 0)
 			{
-				onReceivedUsersListInRoomEvent?.Invoke((room, tmRoomsUsersListDictionary[room.GetGuid()]));
+				onUsersListInRoom?.Invoke((room, tmRoomsUsersListDictionary[room.GetGuid()]));
 				tmRoomsUsersListDictionary.Remove(room.GetGuid());
 			}
 		}
@@ -382,7 +382,7 @@ namespace NetClient
 			}
 			if (page == 0)
 			{
-				onReceivedApprovedUsersListInRoomEvent?.Invoke((room, tmRoomsApprovedUsersListDictionary[room.GetGuid()]));
+				onApprovedUsersListInRoom?.Invoke((room, tmRoomsApprovedUsersListDictionary[room.GetGuid()]));
 				tmRoomsApprovedUsersListDictionary.Remove(room.GetGuid());
 			}
 		}
@@ -402,7 +402,7 @@ namespace NetClient
 			}
 			if (page == 0)
 			{
-				onReceivedBannedUsersListInRoomEvent?.Invoke((room, tmRoomsBannedUsersListDictionary[room.GetGuid()]));
+				onBannedUsersListInRoom?.Invoke((room, tmRoomsBannedUsersListDictionary[room.GetGuid()]));
 				tmRoomsBannedUsersListDictionary.Remove(room.GetGuid());
 			}
 		}
@@ -410,42 +410,42 @@ namespace NetClient
 		private void ReceivedErrorResponseFromServer(string[] messageChunks)
 		{
 		    Enum.TryParse(messageChunks[1], out CommunicationTypeEnum s);
-            onReceivedErrorResponseFromServerEvent?.Invoke((s,messageChunks[2]));
+            onErrorResponseFromServer?.Invoke((s,messageChunks[2]));
 		}
 
 		private void ReceivedCommunicationToAll(string[] messageChunks)
 		{
 			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString(messageChunks,
 				out User user);
-			onReceivedCommunicationToAllEvent?.Invoke((user, messageSent));
+			onCommunicationToAll?.Invoke((user, messageSent));
 		}
 
 		private void ReceivedUsersInRoom(string[] messageChunks)
 		{
 			List<User> users =
 				ProcessMessageData.GetUserListAndRoomFromFormatStringRoomJsonUserListJson(messageChunks, out Room room);
-			onReceivedUsersListInRoomEvent?.Invoke((room, users));
+			onUsersListInRoom?.Invoke((room, users));
 		}
 		
 		private void ReceivedApprovedUsersInRoom(string[] messageChunks)
 		{
 			List<User> users =
 				ProcessMessageData.GetUserListAndRoomFromFormatStringRoomJsonUserListJson(messageChunks, out Room room);
-			onReceivedApprovedUsersListInRoomEvent?.Invoke((room, users));
+			onApprovedUsersListInRoom?.Invoke((room, users));
 		}
 		
 		private void ReceivedBannedUsersInRoom(string[] messageChunks)
 		{
 			List<User> users =
 				ProcessMessageData.GetUserListAndRoomFromFormatStringRoomJsonUserListJson(messageChunks, out Room room);
-			onReceivedBannedUsersListInRoomEvent?.Invoke((room, users));
+			onBannedUsersListInRoom?.Invoke((room, users));
 		}
 
 		private void ReceivedMessageWasReceivedByUser(string[] messageChunks)
 		{
 			string messageSent = ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString( messageChunks,
 				out User user);
-			onReceivedMessageWasReceivedByUserEvent?.Invoke((user, messageSent));
+			onMessageWasReceivedByUser?.Invoke((user, messageSent));
 		}
 
 		private void ReceivedUserInfo(string[] messageChunks)
@@ -463,7 +463,7 @@ namespace NetClient
 		{
 			User leftUser =
 				ProcessMessageData.GetUserAndGuidFromFormatStringGuidUserJson(messageChunks, out var guidLeft);
-			onRecievedUserLeftRoomEvent?.Invoke((leftUser, guidLeft));
+			onUserLeftRoom?.Invoke((leftUser, guidLeft));
 			Console.WriteLine($"{leftUser.GetUserName()} left room");
 		}
 
@@ -471,7 +471,7 @@ namespace NetClient
 		{
 			var joinedUser =
 				ProcessMessageData.GetUserAndGuidFromFormatStringGuidUserJson(messageChunks, out var guidJoined);
-			onRecievedUserJoinedRoomEvent?.Invoke((joinedUser, guidJoined));
+			onUserJoinedRoom?.Invoke((joinedUser, guidJoined));
 			Console.WriteLine($"{joinedUser.GetUserName()} joined room");
 		}
 
@@ -479,34 +479,34 @@ namespace NetClient
 		{
 			var roomMessageString = ProcessMessageData.GetRoomUserAndMessageFromFormatStringUserJsonRoomJsonMessage(messageChunks, out var room,
 					out var userFromRoom);
-			onRecievedRoomMessageEvent?.Invoke((room, userFromRoom, roomMessageString));
+			onRoomMessage?.Invoke((room, userFromRoom, roomMessageString));
 		}
 
 		private void ReceivedRoomCreated(string[] messageChunks)
 		{
 			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
-			onRecievedRoomCreatedEvent?.Invoke(fromJson);
+			onRoomCreated?.Invoke(fromJson);
 			Console.WriteLine($"created room: {fromJson.GetGuid().ToString()} has been created");
 		}
 
 		private void ReceivedRoomDestroyed(string[] messageChunks)
 		{
 			Room destroyedRoomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
-			onRecievedRoomDestroyedEvent?.Invoke(destroyedRoomFromJson);
+			onRoomDestroyed?.Invoke(destroyedRoomFromJson);
 			Console.WriteLine($"room has been destroyed: {destroyedRoomFromJson.GetGuid().ToString()}");
 		}
 
 		private void ReceivedRoomJoined(string[] messageChunks)
 		{
 			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
-			onRecievedRoomJoinedEvent?.Invoke(roomFromJson);
+			onRoomJoined?.Invoke(roomFromJson);
 			Console.WriteLine($"joined room: {roomFromJson.GetGuid().ToString()}");
 		}
 		
 		private void ReceivedRoomLeft(string[] messageChunks)
 		{
 			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
-			onRecievedRoomLeftEvent?.Invoke(roomFromJson);
+			onRoomLeft?.Invoke(roomFromJson);
 			Console.WriteLine($"left room: {roomFromJson.GetGuid().ToString()}");
 		}
 
@@ -515,7 +515,7 @@ namespace NetClient
 			roomList.Clear();
 			var JsonDe = ProcessMessageData.GetRoomsListFromMessageFormatStringJsonRooms(messageChunks);
 			roomList = JsonDe;
-			onRecievedRoomListEvent?.Invoke(roomList);
+			onRoomList?.Invoke(roomList);
 		}
 
 		private void ReceivedMessage(string[] messageChunks)
@@ -524,19 +524,19 @@ namespace NetClient
 				ProcessMessageData.GetUserMessageFromMessageFormatStringJsonUserString(messageChunks,
 					out var user);
 			SendReceivedMessage(user, messageString);
-			onRecievedMessageFromUserEvent?.Invoke((user, messageString));
+			onMessageFromUser?.Invoke((user, messageString));
 		}
 
 		private void ReceivedUserList(string[] messageChunks)
 		{
 			networkUsers = ProcessMessageData.GetUsersFromMessageFormatStringJsonUserList(messageChunks);
-			onRecievedUserListEvent?.Invoke(networkUsers);
+			onUserList?.Invoke(networkUsers);
 		}
 
 		private void ReceivedClientGuid(string[] messageChunks)
 		{
 			ClientID = Guid.Parse(messageChunks[1]);
-			onRecievedGuidEvent?.Invoke(ClientID);
+			onRecievedGuid?.Invoke(ClientID);
 			Task.FromResult(RequestUserFromGuid(ClientID));
 		}
 
@@ -546,13 +546,13 @@ namespace NetClient
 			if (messageChunks[1] == "OK")
 			{
 				isClientValidated = true;
-				onReceivedAuthenticateEvent?.Invoke(true);
+				onAuthenticate?.Invoke(true);
 				Task.FromResult(RequestMyClientId());
 				return true;
 			}
 			else
 			{
-				onReceivedAuthenticateEvent?.Invoke(false);
+				onAuthenticate?.Invoke(false);
 				if (DisconnectOnFailAuthentication) return false;
 				throw new AuthenticationException("User is not Validated");
 			}
@@ -569,7 +569,7 @@ namespace NetClient
 			{
 				networkUsers = tmUsersList;
 				tmUsersList = new List<User>();
-				onRecievedUserListEvent?.Invoke(networkUsers);
+				onUserList?.Invoke(networkUsers);
 				handlingUserPationation = false;
 			}
 		}
@@ -585,7 +585,7 @@ namespace NetClient
 			{
 				roomList = tmRoomsList;
 				tmRoomsList = new List<Room>();
-				onRecievedRoomListEvent?.Invoke(roomList);
+				onRoomList?.Invoke(roomList);
 				handlingRoomsPationation = false;
 			}
 		}

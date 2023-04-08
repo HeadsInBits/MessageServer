@@ -60,18 +60,18 @@ public partial class Form1 : Form
 
     private void Form1_Load(object sender, EventArgs e)
     {
-        netClient.onReceivedAuthenticateEvent += NetClientOnReceivedAuthenticateEvent;
-        netClient.onRecievedMessageFromUserEvent += NetClientOnRecievedMessageReceivedEvent;
-        netClient.onRecievedRoomCreatedEvent += NetClientOnRecievedRoomCreatedEvent;
-        netClient.onRecievedRoomJoinedEvent += NetClientOnRecievedRoomJoinedEvent;
-        netClient.onRecievedRoomListEvent += NetClientOnRecievedRoomListReceivedEvent;
-        netClient.onRecievedUserListEvent += NetClientOnRecievedUserListReceivedEvent;
-        netClient.onRecievedRoomMessageEvent += NetClientOnRecievedRoomMessageEvent;
-        netClient.onReceivedUsersListInRoomEvent += NetClient_onReceivedUsersListInRoomEvent;
-        netClient.onRecievedUserJoinedRoomEvent += NetClient_onRecievedUserJoinedRoomEvent;
-        netClient.onRecievedUserLeftRoomEvent += NetClient_onRecievedUserLeftRoomEvent;
-        netClient.onRecievedRoomDestroyedEvent += NetClient_onRecievedRoomDestroyedEvent;
-        netClient.onRecievedUserDisconnectedEvent += NetClient_onRecievedUserDisconnectedEvent;
+        netClient.onAuthenticate += NetClientOnReceivedAuthenticateEvent;
+        netClient.onMessageFromUser += NetClientOnRecievedMessageReceivedEvent;
+        netClient.onRoomCreated += NetClientOnRecievedRoomCreatedEvent;
+        netClient.onRoomJoined += NetClientOnRecievedRoomJoinedEvent;
+        netClient.onRoomList += NetClientOnRecievedRoomListReceivedEvent;
+        netClient.onUserList += NetClientOnRecievedUserListReceivedEvent;
+        netClient.onRoomMessage += NetClientOnRecievedRoomMessageEvent;
+        netClient.onUsersListInRoom += NetClient_onReceivedUsersListInRoomEvent;
+        netClient.onUserJoinedRoom += NetClient_onRecievedUserJoinedRoomEvent;
+        netClient.onUserLeftRoom += NetClient_onRecievedUserLeftRoomEvent;
+        netClient.onRoomDestroyed += NetClient_onRecievedRoomDestroyedEvent;
+        netClient.onUserDisconnected += NetClient_onRecievedUserDisconnectedEvent;
     }
 
     private void NetClient_onRecievedUserDisconnectedEvent(User obj)
