@@ -46,17 +46,12 @@ public class WebSocketHandler
 		}
 	}
 	
-	private User? ValidateUser(string[] messageChunks, int index)
+	private bool ValidateUser(string[] messageChunks)
 	{
 		if (messageChunks.Length < 3)
 			throw new Exception();
 
-		if (dbManager.ValidateAccount(messageChunks [1], messageChunks [2])) {
-			User? tmpUser = new User(messageChunks [1], true, Guid.NewGuid(), index);
-			return tmpUser;
-		}
-
-		return null;
+		return dbManager.ValidateAccount(messageChunks[1], messageChunks[2]);
 	}
 
 	private async Task StartHandling(WebSocket socket, int index)
@@ -103,9 +98,10 @@ public class WebSocketHandler
 					}
 					_userController.RemoveUser(userDisconnected);
 					sockets [index] = null;
-					for (var i = 0; i < _userController.connectedClients.Count; i++)
+					List<User> connectedClients = _userController.GetConnectedClients();
+					for (var i = 0; i < connectedClients.Count; i++)
 					{
-						var user = _userController.connectedClients[i];
+						var user = connectedClients[i];
 						SendUserDisconnected(userDisconnected, user);
 					}
 
@@ -532,7 +528,8 @@ public class WebSocketHandler
 	
 	private void ReceivedRequestUserListJson(int index)
 	{
-		List<User> clients = _userController.connectedClients;
+		List<User> clients = _userController.GetConnectedClients();
+		Console.WriteLine($"{clients.Count}");
 		int count = clients.Count;
 		int sentNumber = (int)MathF.Ceiling((float)count / User.NumberOfUsersToSendInMessage)-1;
 		if (count > User.NumberOfUsersToSendInMessage)
@@ -544,6 +541,7 @@ public class WebSocketHandler
 				int c = 0;
 				for(; c < User.NumberOfUsersToSendInMessage && count > 0 ; c++)
 				{
+					Console.WriteLine(clients[count-1].GetUserName());
 					list.Add(clients[count-1]);
 					count--;
 				}
@@ -649,28 +647,17 @@ public class WebSocketHandler
 
 	private void ReceivedAuthenticate(int index, string[] message)
 	{
-		User? tmpUser = ValidateUser(message, index);
-		if (tmpUser != null)
+		if (ValidateUser(message))
 		{
-			tmpUser.WebSocketID = index;
+			bool unique = _userController.CreateUser(message[1], true,  index, out User tmpUser);
 
-			bool Unique = true;
-
-			for (var i = 0; i < _userController.connectedClients.Count; i++)
+			if (unique)
 			{
-				var usr = _userController.connectedClients[i];
-				if (usr.WebSocketID == index)
-					Unique = false;
-			}
-
-			if (Unique)
-			{
-				_userController.connectedClients.Add(tmpUser);
-				Console.WriteLine("Added User to Client list:" + tmpUser.WebSocketID + "User:" + tmpUser.GetUserName());
+				Console.WriteLine("Added User to Client list:" + index + "User:" + tmpUser.GetUserName());
 			}
 			else
 			{
-				Console.WriteLine("User Already Authenticated: " + tmpUser.WebSocketID + "User:" + tmpUser.GetUserName());
+				Console.WriteLine("User Already Authenticated: " + index + "User:" + tmpUser.GetUserName());
 			}
 
 			SendAuthenticationPassed(index);
@@ -826,7 +813,7 @@ public class WebSocketHandler
 
 	private void SendUserListJson(int index)
 	{
-		string users = User.GetJsonFromUsersList(_userController.connectedClients);
+		string users = User.GetJsonFromUsersList(_userController.GetConnectedClients());
 		var send = new []
 		{
 			$"{ CommunicationTypeEnum.ClientReceiveUserListJson}",
@@ -837,9 +824,10 @@ public class WebSocketHandler
 
 	private void SendCommunicationsToUser(User com, string message, int index)
 	{
-		for (var i = 0; i < _userController.connectedClients.Count; i++)
+		var connectedClients = _userController.GetConnectedClients();
+		for (var i = 0; i < connectedClients.Count; i++)
 		{
-			var u = _userController.connectedClients[i];
+			var u = connectedClients[i];
 			if (u.GetUserName() == com.GetUserName())
 			{
 				var send = new[]
