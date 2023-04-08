@@ -8,14 +8,14 @@ namespace LibObjects
     public class User : IEquatable<User>
     {
 
-        protected class UserJsonData
+        class UserJsonData
         {
             public string UserName;
             public bool IsValidated;
             public Guid Guid;
         }
 
-        protected UserJsonData GetJsonDataFromUser()
+        UserJsonData GetJsonDataFromUser()
         {
             UserJsonData json = new UserJsonData
             {
@@ -26,7 +26,7 @@ namespace LibObjects
             return json;
         }
 
-        protected User(UserJsonData json)
+        User(UserJsonData json)
         {
             _userName = json.UserName;
             _isValidated = json.IsValidated;
@@ -72,11 +72,11 @@ namespace LibObjects
         }
 
         //TODO: NOW SERIALISATION AND DESERIALIZATION IS HAPPENING HERE WE COULD:
-        //1. CHANGE THE FORMAT
-        //2. VALIDATE ALL IN ONE PLACE
-        //3. RESTRICT DATA BEING PASSED
-        //4. OPTIMISE FOR DATA SIZE
-        //5. ENCRYPT?
+        //TODO: 1. CHANGE THE FORMAT
+        //TODO: 2. VALIDATE ALL IN ONE PLACE
+        //TODO: 3. RESTRICT DATA BEING PASSED
+        //TODO: 4. OPTIMISE FOR DATA SIZE
+        //TODO: 5. ENCRYPT?
 
 
         public static User GetUserFromJson(string jsonString)

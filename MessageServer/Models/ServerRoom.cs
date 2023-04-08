@@ -77,7 +77,7 @@ public class ServerRoom : Room
     {
         foreach (var user in _usersInRoom)
         {
-            if (user.GetUserName() == usrToRemove.GetUserName())
+            if (user.Equals(usrToRemove))
             {
                 _usersInRoom.Remove(user);
                 return RoomStatusCodes.Ok;
