@@ -314,6 +314,11 @@ public class WebSocketHandler
 	{
 		User requester = _userController.GetUserProfileFromSocketId(index);
 		Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
+		if(!_roomController.RoomExists(room.GetGuid()))
+		{
+			SendErrorMessage(index, com, $"Room {room.GetRoomName()} does not exist");
+			return;
+		}
 		if (!_roomController.IsCreatorOfRoom(room, requester) && 
 		    !(_roomController.IsInRoom(room, user) && user.GetUserName() == requester.GetUserName()))
 		{
