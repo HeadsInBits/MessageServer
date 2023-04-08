@@ -28,7 +28,7 @@ public class RoomController
 
 		foreach (var pair in ServerRoomDictionary) {
 			foreach (var usr in pair.Value.GetUsersInRoom()) {
-				if (usr == user) {
+				if (usr.Equals(user)) {
 					ServerRoomList.Add(pair.Key);
 				}
 			}

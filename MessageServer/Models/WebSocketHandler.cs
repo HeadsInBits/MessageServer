@@ -72,6 +72,7 @@ public class WebSocketHandler
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
                     await HandleDisconnection(socket, index);
+                    sockets[index] = null;
                 }
                 else if (result.MessageType == WebSocketMessageType.Binary ||
                          result.MessageType == WebSocketMessageType.Text)
@@ -89,7 +90,23 @@ public class WebSocketHandler
                 if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived ||
                     socket.State == WebSocketState.Aborted || socket.State == WebSocketState.None)
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{DateTime.Now}: Client Disconnected : " + index + " EX: " + ex.Message);
+					Console.ResetColor();
                     await HandleDisconnection(socket, index);
+                    sockets[index] = null;
+
+                    if (socket.State == WebSocketState.CloseReceived)
+                    {
+                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing response",
+                            CancellationToken.None);
+                    }
+                    else
+                    {
+                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
+                            CancellationToken.None);
+                    }
+
                 }
             }
             catch (Exception ex)
@@ -97,6 +114,7 @@ public class WebSocketHandler
                 Console.WriteLine($"{DateTime.Now} Error receiving message: {ex.Message}");
                 // If the error is related to user disconnection, handle it properly
                 await HandleDisconnection(socket, index);
+                sockets[index] = null;
             }
         }
     }
@@ -108,26 +126,14 @@ public class WebSocketHandler
         {
             // Disconnect handling code goes here
 
-			OldDisconnectCode(index);
+            RemoveUserFromSubscribedRooms(index);
 
-            // Close the socket
-            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived ||
-                socket.State == WebSocketState.Aborted || socket.State == WebSocketState.None)
-            {
-                Console.WriteLine(DateTime.Now + "Client Disconnected:" + index);
-                try
-                {
-                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
-                        CancellationToken.None);
-                    sockets[index] = null;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"{DateTime.Now} Error closing WebSocket: {ex.Message}");
-                }
-            }
         }
-        finally
+        catch (Exception ex)
+        {
+            Console.WriteLine($"{DateTime.Now} Error Removing User From Subscribed Room: {ex.Message}");
+        }
+		finally
         {
             _syncLock.Release();
         }
@@ -137,6 +143,9 @@ public class WebSocketHandler
     {
         User? userDisconnected = _userController.GetUserProfileFromSocketId(index);
 
+        if (userDisconnected == null)
+            return;
+
         foreach (var room in _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected))
         {
             _roomController.GetServerRoomFromGUID(room).RemoveUserFromRoom(userDisconnected);
@@ -145,7 +154,14 @@ public class WebSocketHandler
             {
                 SendUserLeftRoom(usr, room, User.GetJsonFromUser(userDisconnected));
             }
+
+            if (_roomController.GetServerRoomFromGUID(room).GetCreator() == userDisconnected.GetUserName())
+            {
+                RoomDestroyed(_roomController.GetServerRoomFromGUID(room));
+            }
         }
+
+		_userController.RemoveUser(userDisconnected);
 
     }
 
