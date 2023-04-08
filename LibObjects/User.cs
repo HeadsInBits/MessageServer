@@ -8,14 +8,14 @@ namespace LibObjects
     public class User : IEquatable<User>
     {
 
-        class UserJsonData
+        protected class UserJsonData
         {
             public string UserName;
             public bool IsValidated;
             public Guid Guid;
         }
 
-        UserJsonData GetJsonDataFromUser()
+         protected UserJsonData GetJsonDataFromUser()
         {
             UserJsonData json = new UserJsonData
             {
@@ -26,7 +26,7 @@ namespace LibObjects
             return json;
         }
 
-        User(UserJsonData json)
+         protected User(UserJsonData json)
         {
             _userName = json.UserName;
             _isValidated = json.IsValidated;
