@@ -4,13 +4,13 @@ namespace MessageServer.Models;
 
 public class UserController
 {
-	public List<User> connectedClients = new List<User>();
+	private List<ServerUser> connectedClients = new List<ServerUser>();
 
 
 	public User? GetUserProfileFromSocketId(int SocketId)
 	{
 		foreach (var usr in connectedClients) {
-			if (usr.WebSocketID == SocketId) {
+			if (usr.GetWebSocketID() == SocketId) {
 				return usr;
 			}
 		}
@@ -42,7 +42,7 @@ public class UserController
 	public Guid GetGuidFromSocketId(int index)
 	{
 		foreach (var usr in connectedClients) {
-			if (usr.WebSocketID == index) {
+			if (usr.GetWebSocketID() == index) {
 				return usr.GetUserGuid();
 			}
 		}
@@ -67,9 +67,47 @@ public class UserController
 		{
 			if (client.GetUserGuid() == user.GetUserGuid())
 			{
-				return client.WebSocketID;
+				return client.GetWebSocketID();
 			}
 		}
 		return -1;
+	}
+
+	public List<User> GetConnectedClients()
+	{
+		List<User> users = new List<User>();
+		foreach (var client in connectedClients)
+		{
+			users.Add(client);
+		}
+
+		return users;
+	}
+
+	public bool CreateUser(string name, bool validated, int index, out User? user)
+	{
+		user = null;
+		ServerUser serverUser = new ServerUser(name, validated, index);
+		bool unique = userUnique(serverUser);
+		if (unique)
+		{
+			connectedClients.Add(serverUser);
+			user = serverUser;
+		}
+		return unique;
+	}
+
+	public bool userUnique(ServerUser user)
+	{
+		for (var index = 0; index < connectedClients.Count; index++)
+		{
+			var client = connectedClients[index];
+			if (user.GetWebSocketID() == client.GetWebSocketID())
+			{
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
