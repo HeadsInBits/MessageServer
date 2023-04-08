@@ -1,15 +1,14 @@
 using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
 using LibObjects;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NetworkManager;
 
 public partial class Form1 : Form
 {
     public NetClient.Client netClient = new NetClient.Client();
-
     private List<RoomForm> roomForms = new List<RoomForm>();
-
 
     public Form1()
     {
@@ -71,6 +70,13 @@ public partial class Form1 : Form
         netClient.onUserLeftRoom += NetClient_onRecievedUserLeftRoomEvent;
         netClient.onRoomDestroyed += NetClient_onRecievedRoomDestroyedEvent;
         netClient.onUserDisconnected += NetClient_onRecievedUserDisconnectedEvent;
+        netClient.onErrorResponseFromServer += NetClient_onErrorResponseFromServer;
+    }
+    private static bool IsNotNull([NotNullWhen(true)] object? obj) => obj != null;
+
+    private void NetClient_onErrorResponseFromServer((CommunicationTypeEnum comEnum, string message) obj)
+    {
+        MessageBox.Show(obj.message);
     }
 
     private void NetClient_onRecievedUserDisconnectedEvent(User obj)
@@ -82,13 +88,26 @@ public partial class Form1 : Form
     {
         MessageBox.Show(obj.GetRoomName() + " is being Destroyed \n The window will now close");
 
-        RoomForm? context = GetRoomFormByGUID(obj.GetGuid());
-        roomForms.Remove(context);
-        context.Close();
+        CloseChatWindow(obj.GetGuid());
+    }
+
+    private void CloseChatWindow(Guid roomGuid)
+    {
+        RoomForm? context = GetRoomFormByGUID(roomGuid);
+        if (context != null)
+        {
+            roomForms.Remove(context);
+            context.Close();
+        }
     }
 
     private void NetClient_onRecievedUserLeftRoomEvent((User user, Guid roomGuid) obj)
     {
+        if (obj.user.GetUserName() == netClient.GetClientName())
+        {
+            CloseChatWindow(obj.roomGuid);
+        }
+
         GetRoomFormByGUID(obj.roomGuid).UpdateUserList();
         GetRoomFormByGUID(obj.roomGuid).ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": LEFT THE ROOM");
 
@@ -124,7 +143,7 @@ public partial class Form1 : Form
     {
         //MessageBox.Show($"Got Message from Room{obj.room.GetGuid()} :- {obj.Message}");
 
-        GetRoomFormByGUID(obj.room.GetGuid()).ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": " + obj.Message);
+        GetRoomFormByGUID(obj.room.GetGuid()).ProcessIncomingMessage(obj.Message);
 
         //foreach (var rForm in roomForms)
         //{
@@ -138,7 +157,7 @@ public partial class Form1 : Form
 
     private void NetClientOnRecievedRoomJoinedEvent(Room obj)
     {
-        //TODO
+        //TODO:
         roomForms.Add(new RoomForm(obj, netClient));
         roomForms.Last().Show();
     }
@@ -188,6 +207,8 @@ public partial class Form1 : Form
         {
             LoginButton.BackColor = Color.Green;
             LoginStatusStrip.Text = "Login OK + Authenticated";
+            RefreshUsersButton_Click(null,null);
+            RefreshRoomsButton_Click(null, null);
 
         }
         else
@@ -200,7 +221,7 @@ public partial class Form1 : Form
 
     private void JoinRoomButton_Click(object sender, EventArgs e)
     {
-        Room roomToJoin = RoomList.SelectedItem as Room;
+        Room? roomToJoin = RoomList.SelectedItem as Room;
         if (roomToJoin == null)
             return;
 
@@ -215,11 +236,11 @@ public partial class Form1 : Form
 
     private void RoomList_SelectedIndexChanged(object sender, EventArgs e)
     {
-        Room roomInfo = RoomList.SelectedItem as Room;
+        Room? roomInfo = RoomList.SelectedItem as Room;
         if (roomInfo == null) { return; }
 
         RoomNameLabel.Text = "Room Name: " + roomInfo.GetRoomName();
-        RoomCreatorLabel.Text = "Room Creator: " + roomInfo.GetCreator().GetUserName();
+        RoomCreatorLabel.Text = "Room Creator: " + roomInfo.GetCreator();
         MetaDataLabel.Text = "Meta Data: " + roomInfo.GetMeta();
         AccessLevelLabel.Text = "Access Level: " + roomInfo.GetAccessLevel();
         RoomLockedLabel.Text = "Room Locked: " + roomInfo.GetIsRoomLocked();

@@ -30,7 +30,7 @@ namespace NetworkManager
                 return;
             }
 
-            myClient.RequestSendMessageToRoomAsync(thisRoom.GetGuid(), MessageInput.Rtf);
+            myClient.RequestSendMessageToRoomAsync(thisRoom.GetGuid(), MessageInput.Text);
             MessageInput.Text = "";
 
         }
