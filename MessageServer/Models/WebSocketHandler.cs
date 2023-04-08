@@ -1,4 +1,5 @@
-﻿using System.Net.WebSockets;
+﻿using System;
+using System.Net.WebSockets;
 using System.Reflection.Metadata;
 using System.Text;
 using LibObjects;
@@ -16,14 +17,18 @@ public class WebSocketHandler
 	DBManager dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
 
 	private bool logginEnabled = true;
+    private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
-	public void AddSocket(WebSocket socket)
+    public void AddSocket(WebSocket socket)
 	{
 		// Find an available slot in the sockets array
 		int index = Array.IndexOf(sockets, null);
 		if (index >= 0) {
 			sockets [index] = socket;
-			StartHandling(socket, index);
+			Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine(DateTime.Now  + "Incoming Socket:" + index);
+            Console.ForegroundColor = ConsoleColor.White;
+            StartHandling(socket, index);
 		}
 		else {
 			// No available slots, close the socket
@@ -56,85 +61,121 @@ public class WebSocketHandler
 
 	private async Task StartHandling(WebSocket socket, int index)
 	{
-		// Handle WebSocket messages in a separate thread
-		var buffer = new byte [32768];
-		while (!cancellation.IsCancellationRequested) {
+        // Handle WebSocket messages in a separate thread
+        var buffer = new byte[32768];
+        while (!cancellation.IsCancellationRequested)
+        {
+            try
+            {
+                var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
-			try {
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    await HandleDisconnection(socket, index);
+                }
+                else if (result.MessageType == WebSocketMessageType.Binary ||
+                         result.MessageType == WebSocketMessageType.Text)
+                {
+                    // Handle the message
+                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine($"{DateTime.Now}: Received message from client {index}: {message}");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    ProcessMessage(index, message);
+                }
+            }
+            catch (WebSocketException ex)
+            {
+                if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived ||
+                    socket.State == WebSocketState.Aborted || socket.State == WebSocketState.None)
+                {
+                    await HandleDisconnection(socket, index);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{DateTime.Now} Error receiving message: {ex.Message}");
+                // If the error is related to user disconnection, handle it properly
+                await HandleDisconnection(socket, index);
+            }
+        }
+    }
 
-				var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+    private async Task HandleDisconnection(WebSocket socket, int index)
+    {
+        await _syncLock.WaitAsync();
+        try
+        {
+            // Disconnect handling code goes here
 
-				if (result.MessageType == WebSocketMessageType.Close) {
-					// Close the socket
-					User userDisconnected = _userController.GetUserProfileFromSocketId(index);
-					var findAllRoomsWhereUserInRoom = _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected);
-					if (findAllRoomsWhereUserInRoom.Count > 0)
+			//OldDisconnectCode(index);
+
+            // Close the socket
+            if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived ||
+                socket.State == WebSocketState.Aborted || socket.State == WebSocketState.None)
+            {
+                Console.WriteLine(DateTime.Now + "Client Disconnected:" + index);
+                try
+                {
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
+                        CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{DateTime.Now} Error closing WebSocket: {ex.Message}");
+                }
+            }
+        }
+        finally
+        {
+            _syncLock.Release();
+        }
+    }
+
+
+	private void OldDisconnectCode(int index)
+	{
+
+		User userDisconnected = _userController.GetUserProfileFromSocketId(index);
+		var findAllRoomsWhereUserInRoom = _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected);
+		if (findAllRoomsWhereUserInRoom.Count > 0)
+		{
+			string userJson = User.GetJsonFromUser(userDisconnected);
+			for (var i = 0; i < findAllRoomsWhereUserInRoom.Count; i++)
+			{
+				var inRoom = findAllRoomsWhereUserInRoom[i];
+				Room room = _roomController.GetServerRoomFromGUID(inRoom);
+				var usersInRoom = _roomController.GetUsersInRoom(room);
+				bool isOwner = room.GetCreator() == userDisconnected.GetUserName();
+				if (_roomController.IsInRoom(room, userDisconnected))
+				{
+					_roomController.RemoveUserFromServerRoom(userDisconnected, room);
+					for (var index1 = 0; index1 < usersInRoom.Count; index1++)
 					{
-						string userJson = User.GetJsonFromUser(userDisconnected);
-						for (var i = 0; i < findAllRoomsWhereUserInRoom.Count; i++)
+						var user = usersInRoom[index1];
+						if (inRoom != userDisconnected.GetUserGuid())
 						{
-							var inRoom = findAllRoomsWhereUserInRoom[i];
-							Room room = _roomController.GetServerRoomFromGUID(inRoom);
-							var usersInRoom = _roomController.GetUsersInRoom(room);
-							bool isOwner = room.GetCreator() == userDisconnected.GetUserName();
-							if (_roomController.IsInRoom(room, userDisconnected))
-							{
-								_roomController.RemoveUserFromServerRoom(userDisconnected, room);
-								for (var index1 = 0; index1 < usersInRoom.Count; index1++)
-								{
-									var user = usersInRoom[index1];
-									if (inRoom != userDisconnected.GetUserGuid())
-									{
-										SendUserLeftRoom(user, inRoom, userJson);
-									}
-								}
-
-								if (isOwner)
-								{
-									RoomDestroyed(room);
-								}
-							}
+							SendUserLeftRoom(user, inRoom, userJson);
 						}
 					}
-					_userController.RemoveUser(userDisconnected);
-					sockets [index] = null;
-					List<User> connectedClients = _userController.GetConnectedClients();
-					for (var i = 0; i < connectedClients.Count; i++)
+
+					if (isOwner)
 					{
-						var user = connectedClients[i];
-						SendUserDisconnected(userDisconnected, user);
+						RoomDestroyed(room);
 					}
-
-					Console.WriteLine("Client Disconnected:" + index);
-					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
-						CancellationToken.None);
 				}
-				else if (result.MessageType == WebSocketMessageType.Binary ||
-						 result.MessageType == WebSocketMessageType.Text) {
-					// Handle the message
-					var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-					Console.WriteLine($"Received message from client {index}: {message}");
-
-					ProcessMessage(index, message);
-				}
-
-
-			} catch (WebSocketException ex) {
-				if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived) {
-					await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected", CancellationToken.None);
-				}
-				// Handle the client disconnection here
-
-			} catch (Exception ex) {
-				Console.WriteLine($"Error receiving message: {ex.Message}");
-				// Handle the error here
 			}
-
-
+		}
+		_userController.RemoveUser(userDisconnected);
+		//sockets[index] = null;
+		List<User> connectedClients = _userController.GetConnectedClients();
+		for (var i = 0; i < connectedClients.Count; i++)
+		{
+			var user = connectedClients[i];
+			SendUserDisconnected(userDisconnected, user);
 		}
 	}
 
-	
 
 	private void ProcessMessage(int index, string message)
 	{

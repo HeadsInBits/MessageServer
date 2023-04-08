@@ -534,6 +534,7 @@ partial class Form1
         MinimumSize = new Size(550, 350);
         Name = "Form1";
         Text = "Network Manager";
+        FormClosing += Form1_FormClosing;
         Load += Form1_Load;
         tabControl1.ResumeLayout(false);
         NetworkTab.ResumeLayout(false);

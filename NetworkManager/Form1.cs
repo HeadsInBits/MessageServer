@@ -141,9 +141,18 @@ public partial class Form1 : Form
 
     private void NetClientOnRecievedRoomMessageEvent((Room room, User user, string Message) obj)
     {
-        //MessageBox.Show($"Got Message from Room{obj.room.GetGuid()} :- {obj.Message}");
+        RoomForm _formPointer = GetRoomFormByGUID(obj.room.GetGuid());
+        _formPointer.ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": " + obj.Message);
 
-        GetRoomFormByGUID(obj.room.GetGuid()).ProcessIncomingMessage(obj.Message);
+        if (_formPointer.WindowState == FormWindowState.Minimized)
+        {
+            NotificationForm nf = new NotificationForm();
+            nf.RoomText = obj.room.GetRoomName();
+            nf.MessageText = obj.Message;
+            nf.Show();
+        }
+
+
 
         //foreach (var rForm in roomForms)
         //{
@@ -207,7 +216,7 @@ public partial class Form1 : Form
         {
             LoginButton.BackColor = Color.Green;
             LoginStatusStrip.Text = "Login OK + Authenticated";
-            RefreshUsersButton_Click(null,null);
+            RefreshUsersButton_Click(null, null);
             RefreshRoomsButton_Click(null, null);
 
         }
@@ -253,5 +262,10 @@ public partial class Form1 : Form
     private void AccessLevelLabel_Click(object sender, EventArgs e)
     {
 
+    }
+
+    private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+    {
+       netClient.Disconnect();
     }
 }

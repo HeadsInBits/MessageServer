@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.WebSockets;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 
 namespace MessageServer.Models
@@ -13,6 +14,7 @@ namespace MessageServer.Models
 
 		private readonly DBManager _dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
 
+        private readonly bool _logginEnabled = true;
 		private WebSocketServer()
 		{
 			// Set up HttpListener to listen on any IP address
@@ -48,8 +50,11 @@ namespace MessageServer.Models
 
 					try {
 						socketContext = await context.AcceptWebSocketAsync(subProtocol: null);
-					} catch (Exception ex) {
-						Console.WriteLine($"WebSocket connection error: {ex.Message}");
+                        if (_logginEnabled)
+                            Console.WriteLine($"WebSocket Accepted..");
+                    } catch (Exception ex) {
+						if(_logginEnabled)
+						    Console.WriteLine($"WebSocket connection error: {ex.Message}");
 						continue;
 					}
 
