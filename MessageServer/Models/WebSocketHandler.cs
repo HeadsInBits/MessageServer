@@ -108,7 +108,7 @@ public class WebSocketHandler
         {
             // Disconnect handling code goes here
 
-			//OldDisconnectCode(index);
+			OldDisconnectCode(index);
 
             // Close the socket
             if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived ||
@@ -119,6 +119,7 @@ public class WebSocketHandler
                 {
                     await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
                         CancellationToken.None);
+                    sockets[index] = null;
                 }
                 catch (Exception ex)
                 {
@@ -1035,15 +1036,20 @@ public class WebSocketHandler
 	private void SendMessage(int index, string[] send)
 	{
 		string message = ProcessMessageData.BuildMessageSafe(send);
-
-		Console.WriteLine("Index:" + index +  "Socket State: " + sockets[index].State);
-		// sockets[index].SendAsync();
-		if (sockets[index] == null)
+        if (sockets[index] == null)
+        {
+			Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Index:" + index + " Has a null socket whilst trying to send:\n" + send);
+			Console.ResetColor();
 			return;
-	
-		byte [] buffer = Encoding.UTF8.GetBytes(message);
-		// Create a WebSocket message from the buffer
-		var webSocketMessage = new ArraySegment<byte>(buffer);
+        }
+		Console.WriteLine("Index:" + index +  "Socket State: " + sockets[index].State);
+
+
+        // Create a WebSocket message from the buffer
+        byte[] buffer = Encoding.UTF8.GetBytes(message);
+        var webSocketMessage = new ArraySegment<byte>(buffer);
+
 		sockets[index].SendAsync(webSocketMessage, WebSocketMessageType.Text, true, CancellationToken.None);
 		
 		if (logginEnabled) {

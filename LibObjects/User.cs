@@ -86,6 +86,13 @@ namespace LibObjects
 
         public static string GetJsonFromUser(User user)
         {
+            if (user == null)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("SERVER ATTEMPTED TO GetJsonFromUser WITH NULL USER");
+                Console.ResetColor();
+                return "";
+            }
             return JsonConvert.SerializeObject(user.GetJsonDataFromUser(), Formatting.Indented);
         }
 

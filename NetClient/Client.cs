@@ -53,6 +53,7 @@ namespace NetClient
 		public event Action<Guid> onRecievedGuid;
 		public event Action<(User user, Guid guid)> onRecievedUserWithGuidEvent;
 		public event Action<User> onUserDisconnected;
+        public event Action<User> onUserConnent;
 		
 		//FOR DEBUGGING
 		public event Action<string> onMessageSentToSocketEvent;

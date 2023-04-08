@@ -62,6 +62,7 @@ public partial class Form1 : Form
         netClient.onMessageFromUser += NetClientOnRecievedMessageReceivedEvent;
         netClient.onRoomCreated += NetClientOnRecievedRoomCreatedEvent;
         netClient.onRoomJoined += NetClientOnRecievedRoomJoinedEvent;
+        netClient.onRoomLeft += NetClientOnRoomLeftEvent;
         netClient.onRoomList += NetClientOnRecievedRoomListReceivedEvent;
         netClient.onUserList += NetClientOnRecievedUserListReceivedEvent;
         netClient.onRoomMessage += NetClientOnRecievedRoomMessageEvent;
@@ -72,6 +73,12 @@ public partial class Form1 : Form
         netClient.onUserDisconnected += NetClient_onRecievedUserDisconnectedEvent;
         netClient.onErrorResponseFromServer += NetClient_onErrorResponseFromServer;
     }
+
+    private void NetClientOnRoomLeftEvent(Room obj)
+    {
+        CloseChatWindow(obj.GetGuid());
+    }
+
     private static bool IsNotNull([NotNullWhen(true)] object? obj) => obj != null;
 
     private void NetClient_onErrorResponseFromServer((CommunicationTypeEnum comEnum, string message) obj)
@@ -82,6 +89,11 @@ public partial class Form1 : Form
     private void NetClient_onRecievedUserDisconnectedEvent(User obj)
     {
         RefreshUsersButton_Click(null, null);
+    }
+
+    private void NetClientOnRoomLeftEvent()
+    {
+
     }
 
     private void NetClient_onRecievedRoomDestroyedEvent(Room obj)
@@ -96,6 +108,7 @@ public partial class Form1 : Form
         RoomForm? context = GetRoomFormByGUID(roomGuid);
         if (context != null)
         {
+            context.SetIfRoomActive(false);
             roomForms.Remove(context);
             context.Close();
         }
@@ -103,11 +116,6 @@ public partial class Form1 : Form
 
     private void NetClient_onRecievedUserLeftRoomEvent((User user, Guid roomGuid) obj)
     {
-        if (obj.user.GetUserName() == netClient.GetClientName())
-        {
-            CloseChatWindow(obj.roomGuid);
-        }
-
         GetRoomFormByGUID(obj.roomGuid).UpdateUserList();
         GetRoomFormByGUID(obj.roomGuid).ProcessIncomingMessage(obj.user.GetUserName() + " :" + DateTime.Now.ToString("h:mm:ss tt") + ": LEFT THE ROOM");
 
@@ -121,6 +129,7 @@ public partial class Form1 : Form
 
     private RoomForm? GetRoomFormByGUID(Guid roomID)
     {
+
         foreach (var rForm in roomForms)
         {
             if (rForm.thisRoom.GetGuid() == roomID)
@@ -266,6 +275,6 @@ public partial class Form1 : Form
 
     private void Form1_FormClosing(object sender, FormClosingEventArgs e)
     {
-       netClient.Disconnect();
+      netClient.Disconnect();
     }
 }

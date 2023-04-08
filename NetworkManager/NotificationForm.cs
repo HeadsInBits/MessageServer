@@ -29,7 +29,7 @@ namespace NetworkManager
             RoomNameLabel.Text = RoomText;
             MessageTextLaebl.Text = MessageText;
 
-            this.Location = new Point(Screen.PrimaryScreen.Bounds.Width - 400, Screen.PrimaryScreen.Bounds.Height - 200) ; 
+            this.Location = new Point(Screen.PrimaryScreen.Bounds.Width - 400, Screen.PrimaryScreen.Bounds.Height - 200);
             this.StartPosition = FormStartPosition.Manual;
             Opacity = 0;      //first the opacity is 0
 
@@ -47,7 +47,7 @@ namespace NetworkManager
                 t1.Tick += new EventHandler(fadeOut); //this stops the timer if the form is completely displayed
             }
             else
-                Opacity += 0.05;
+                Opacity += 0.005;
         }
 
         void fadeOut(object sender, EventArgs e)

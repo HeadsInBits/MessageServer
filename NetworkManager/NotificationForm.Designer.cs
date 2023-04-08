@@ -35,18 +35,20 @@
             // RoomNameLabel
             // 
             RoomNameLabel.AutoSize = true;
+            RoomNameLabel.Font = new Font("Anka/Coder", 11.25F, FontStyle.Bold, GraphicsUnit.Point);
             RoomNameLabel.Location = new Point(14, 16);
             RoomNameLabel.Name = "RoomNameLabel";
-            RoomNameLabel.Size = new Size(99, 15);
+            RoomNameLabel.Size = new Size(125, 18);
             RoomNameLabel.TabIndex = 0;
             RoomNameLabel.Text = "RoomNameLabel";
             // 
             // MessageTextLaebl
             // 
             MessageTextLaebl.AutoSize = true;
+            MessageTextLaebl.Font = new Font("Anka/Coder", 11.25F, FontStyle.Bold, GraphicsUnit.Point);
             MessageTextLaebl.Location = new Point(14, 65);
             MessageTextLaebl.Name = "MessageTextLaebl";
-            MessageTextLaebl.Size = new Size(99, 15);
+            MessageTextLaebl.Size = new Size(152, 18);
             MessageTextLaebl.TabIndex = 1;
             MessageTextLaebl.Text = "MessageTextlabel";
             // 

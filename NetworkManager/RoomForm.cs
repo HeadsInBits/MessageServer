@@ -8,6 +8,8 @@ namespace NetworkManager
         public Room thisRoom;
         public NetClient.Client myClient;
 
+        private bool roomActive = true;
+
         public RoomForm(Room room, NetClient.Client client)
         {
             thisRoom = room;
@@ -20,6 +22,11 @@ namespace NetworkManager
         {
             this.Text = "Room Loaded:" + thisRoom.GetRoomName();
             myClient.RequestGetUsersInRoomAsync(thisRoom.GetGuid());
+        }
+
+        public void SetIfRoomActive(bool value)
+        {
+            roomActive = value;
         }
 
         private void SendMessageButton_Click(object sender, EventArgs e)
@@ -56,7 +63,11 @@ namespace NetworkManager
             RefreshUsersButton_Click(null, null);
         }
 
-        private void RoomForm_FormClosing(object sender, FormClosingEventArgs e) => myClient.RequestRemoveUserFromRoom(thisRoom, myClient.GetUser());
+        private void RoomForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (roomActive)
+                myClient.RequestRemoveUserFromRoom(thisRoom, myClient.GetUser());
+        }
 
         private void RefreshUsersButton_Click(object sender, EventArgs e)
         {

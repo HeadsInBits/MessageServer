@@ -50,8 +50,16 @@ public class UserController
 		return Guid.Empty;
 	}
 
-	public void RemoveUser(User user)
+	public void RemoveUser(User? user)
 	{
+        if (user == null)
+        {
+			Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Server Attempted To Remove a Null User");
+			Console.ResetColor();
+			return;
+        }
+
 		foreach (var client in connectedClients)
 		{
 			if (client.GetUserGuid() == user.GetUserGuid())
