@@ -113,14 +113,17 @@ public class RoomController
 		ServerRoomDictionary[room.GetGuid()].LockRoom(on);
 	}
 	
-	public void AddUserToBanListInServerRoom(string roomName, Room room)
+	public void RenameServerRoom(string roomName, Room room)
 	{
 		ServerRoomDictionary[room.GetGuid()].SetRoomName(roomName);
 	}
 
 	public List<User> GetUsersInRoom(Room room)
 	{
-		return ServerRoomDictionary[room.GetGuid()].GetUsersInRoom();
+		
+		List<User> usersInRoom = ServerRoomDictionary[room.GetGuid()].GetUsersInRoom();
+		Console.WriteLine($"Get users in {room.GetRoomName()} = {usersInRoom.Count}");
+		return usersInRoom;
 	}
 	
 	public bool IsCreatorOfRoom(Room room, User user)

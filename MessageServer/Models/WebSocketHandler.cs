@@ -243,12 +243,12 @@ public class WebSocketHandler
 				ReceivedRequestRemoveApproveFromUserInRoom(index, messageChunks, s);	
 				break;
 			
-			//"[ServerReceiveRequestApproveUserFromRoom]:[ROOM_JSON]"
+			//"[ServerReceiveRequestRoomBannedUserList]:[ROOM_JSON]"
 			case CommunicationTypeEnum.ServerReceiveRequestRoomBannedUserList: 
 				ReceivedRequestBannedUsersListJsonInRoom(index, Guid.Parse(messageChunks [1]));
 				break;
 			
-			//"[ServerReceiveRequestRemoveApproveFromUserInRoom]:[ROOM_JSON]"
+			//"[ServerReceiveRequestRoomApprovedUserList]:[ROOM_JSON]"
 			case CommunicationTypeEnum.ServerReceiveRequestRoomApprovedUserList: 
 				ReceivedRequestApprovedUsersListJsonInRoom(index, Guid.Parse(messageChunks [1]));	
 				break;

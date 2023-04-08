@@ -83,9 +83,7 @@ public class ServerRoom: Room
                 _usersInRoom.Remove(user);
                 return RoomStatusCodes.Ok;
             }
-
         }
-
         return RoomStatusCodes.Ok;
 	    
     }
@@ -97,18 +95,30 @@ public class ServerRoom: Room
     }
     public RoomStatusCodes RemoveBanFromUserFromRoom(User usrToUnBan)
     {
-	    _bannedList.Remove(usrToUnBan);
+	    foreach (var user in _usersInRoom)
+	    {
+		    if (user.GetUserName() == usrToUnBan.GetUserName())
+		    {
+			    _bannedList.Remove(user);
+		    }
+	    }
 	    return RoomStatusCodes.Ok;
     }
     
     public RoomStatusCodes ApproveUserFromRoom(User usrToApprove)
     {
-        _approvedList.Add(usrToApprove);
+	    _approvedList.Add(usrToApprove);
 	    return RoomStatusCodes.Ok;
     }
     public RoomStatusCodes RemoveApproveFromUserFromRoom(User usrToUnApprove)
     {
-	    _approvedList.Remove(usrToUnApprove);
+	    foreach (var user in _usersInRoom)
+	    {
+		    if (user.GetUserName() == usrToUnApprove.GetUserName())
+		    {
+			    _approvedList.Remove(user);
+		    }
+	    }
 	    return RoomStatusCodes.Ok;
     }
 
