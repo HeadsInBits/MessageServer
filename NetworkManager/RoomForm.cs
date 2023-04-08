@@ -1,5 +1,4 @@
 ﻿using LibObjects;
-using MessageServer.Data;
 using System.Windows.Forms;
 
 namespace NetworkManager
@@ -31,7 +30,7 @@ namespace NetworkManager
                 return;
             }
 
-            myClient.RequestSendMessageToRoomAsync(thisRoom.GetGuid(), MessageInput.Text);
+            myClient.RequestSendMessageToRoomAsync(thisRoom.GetGuid(), MessageInput.Rtf);
             MessageInput.Text = "";
 
         }

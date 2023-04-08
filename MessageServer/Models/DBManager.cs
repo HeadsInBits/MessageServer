@@ -1,6 +1,6 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
-using MessageServer.Data;
+using LibObjects;
 using MySql.Data.MySqlClient;
 
 namespace MessageServer.Models;

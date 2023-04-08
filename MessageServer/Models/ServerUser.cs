@@ -1,4 +1,4 @@
-﻿using MessageServer.Data;
+﻿using LibObjects;
 
 namespace MessageServer.Models
 {

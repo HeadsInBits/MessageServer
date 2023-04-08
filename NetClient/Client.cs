@@ -1,5 +1,4 @@
-﻿using MessageServer.Data;
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text;
 using LibObjects;
@@ -7,7 +6,7 @@ using LibObjects;
 
 namespace NetClient
 {
-	public class Client
+    public class Client
 	{
 		private ClientWebSocket webSocket;
 		private Uri serverUri = new Uri("ws://localhost:8080/");
