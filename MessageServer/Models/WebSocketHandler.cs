@@ -265,6 +265,11 @@ public class WebSocketHandler
 			case CommunicationTypeEnum.ServerReceiveSendMessageToRoom: 
 				ReceivedSendMessageToRoom(index, messageChunks, s);
 				break;
+			
+			//"[ServerReceiveRequestSendPrivateMessageToUserInRoom]:[ROOM_GUID]:[MESSAGE_STRING]:[USER_GUID]"
+			case CommunicationTypeEnum.ServerReceiveRequestSendPrivateMessageToUserInRoom: 
+				ReceivedSendMessageToRoom(index, messageChunks, s);
+				break;
 
 			//"[ServerReceiveRequestUsersListJsonInRoom]:[ROOM_GUID]"
 			case CommunicationTypeEnum.ServerReceiveRequestUsersListJsonInRoom:
@@ -569,6 +574,31 @@ public class WebSocketHandler
 			var usr = usrs[i];
 			SendMessageToRoom(usr, userMessage, room, messageToSend);
 		}
+	}
+	
+	private void ReceivedSendPrivateMessageToUserInRoom(int index, string[] messageChunks, CommunicationTypeEnum com)
+	{
+		Guid guid = Guid.Parse(messageChunks[1]);
+		if (!_roomController.RoomExists(guid))
+		{
+			SendErrorMessage(index, com, $"Room {guid} does not exist");
+			return;
+		}
+		Room room = _roomController.GetServerRoomFromGUID(guid);
+		Guid userToSendToGuid = Guid.Parse(messageChunks[3]);
+		User userToSendTo = _userController.GetUserProfileFromSocketGuid(userToSendToGuid);
+		User userSender = _userController.GetUserProfileFromSocketId(index);
+		string messageToSend = messageChunks[2];
+		foreach (var usr in _roomController.GetUsersInRoom(room))
+		{
+			if (usr.GetUserGuid() == userToSendTo.GetUserGuid())
+			{
+				int i = _userController.GetWebSocketIdFromUser(usr);
+				SendPrivateMessageToUserInRoom(usr, userSender, room, messageToSend);
+				
+			}
+		}
+		SendErrorMessage(index, com, $"User {userToSendTo.GetUserName()} is not in the room");
 	}
 
 	private void ReceivedRequestRoomListJson(int index)
@@ -1053,13 +1083,25 @@ public class WebSocketHandler
 		};
 		SendMessage(index, send);
 	}
-
 	private void SendMessageToRoom(User toUser, User? fromUser, Room room, string messageToSend)
 	{
 		int sendIndex = _userController.GetWebSocketIdFromUser(toUser);
 		var send = new []
 		{
 			$"{CommunicationTypeEnum.ClientReceiveRoomMessage}",
+			$"{User.GetJsonFromUser(fromUser)}",
+			$"{Room.GetJsonFromRoom(room)}",
+			$"{messageToSend}"
+		};
+		SendMessage(sendIndex, send);
+	}
+	
+	private void SendPrivateMessageToUserInRoom(User toUser, User? fromUser, Room room, string messageToSend)
+	{
+		int sendIndex = _userController.GetWebSocketIdFromUser(toUser);
+		var send = new []
+		{
+			$"{CommunicationTypeEnum.ClientReceivePrivateMessageInRoom}",
 			$"{User.GetJsonFromUser(fromUser)}",
 			$"{Room.GetJsonFromRoom(room)}",
 			$"{messageToSend}"

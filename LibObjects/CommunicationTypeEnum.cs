@@ -36,6 +36,7 @@ namespace LibObjects
         ClientReceiveRoomBannedUserListPaginated, //implemented on client & server
         ClientReceiveRoomApprovedUserListPaginated, //implemented on client & server
         ClientReceiveUserLoggedIn, //implemented on client & server
+        ClientReceivePrivateMessageInRoom,
         /// <summary>
         /// MessageFromClient
         /// </summary>
@@ -60,5 +61,6 @@ namespace LibObjects
         ServerReceiveRequestRemoveApproveFromUserInRoom, //implemented on client & server
         ServerReceiveRequestRoomBannedUserList, //implemented on client & server
         ServerReceiveRequestRoomApprovedUserList, //implemented on client & server
+        ServerReceiveRequestSendPrivateMessageToUserInRoom, //implemented on client & server
     }
 }

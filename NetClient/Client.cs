@@ -44,6 +44,7 @@ namespace NetClient
 		public event Action<Room> onRoomJoined;
 		public event Action<Room> onRoomLeft;
 		public event Action<(Room room, User user, string Message)> onRoomMessage;
+		public event Action<(Room room, User user, string Message)> onPrivateRoomMessage;
 		public event Action<(Room room, List<User> users)> onUsersListInRoom;
 		public event Action<(Room room, List<User> users)> onApprovedUsersListInRoom;
 		public event Action<(Room room, List<User> users)> onBannedUsersListInRoom;
@@ -158,7 +159,7 @@ namespace NetClient
 					else
 						break;
 				
-				//"[ClientReceiveUserLoggedIn]:[USER_JSON]:[MESSAGE_STRING]"
+				//"[ClientReceiveUserLoggedIn]:[USER_JSON]"
 				case CommunicationTypeEnum.ClientReceiveUserLoggedIn: 
 					ReceivedUserSignedIn(messageChunks);
 					break;
@@ -246,6 +247,11 @@ namespace NetClient
 				//"[ClientReceiveRoomMessage]:[UserID_GUID]:[ROOM_JSON]:[MESSAGE_STRING]"
 				case CommunicationTypeEnum.ClientReceiveRoomMessage: 
 					ReceivedRoomMessage(messageChunks);
+					break;
+				
+				//"[ClientReceivePrivateMessageInRoom]:[UserID_GUID]:[ROOM_JSON]:[MESSAGE_STRING]"
+				case CommunicationTypeEnum.ClientReceivePrivateMessageInRoom: 
+					ReceivedPrivateRoomMessage(messageChunks);
 					break;
 
 				//"[ClientReceiveUserJoinedRoom]:[ROOM_GUID]:[USER_JSON]"
@@ -492,6 +498,13 @@ namespace NetClient
 			var roomMessageString = ProcessMessageData.GetRoomUserAndMessageFromFormatStringUserJsonRoomJsonMessage(messageChunks, out var room,
 					out var userFromRoom);
 			onRoomMessage?.Invoke((room, userFromRoom, roomMessageString));
+		}
+		
+		private void ReceivedPrivateRoomMessage(string[] messageChunks)
+		{
+			var roomMessageString = ProcessMessageData.GetRoomUserAndMessageFromFormatStringUserJsonRoomJsonMessage(messageChunks, out var room,
+				out var userFromRoom);
+			onPrivateRoomMessage?.Invoke((room, userFromRoom, roomMessageString));
 		}
 
 		private void ReceivedRoomCreated(string[] messageChunks)
@@ -788,6 +801,18 @@ namespace NetClient
 				$"{CommunicationTypeEnum.ServerReceiveSendMessageToRoom}",
 				$"{roomGuid.ToString()}",
 				$"{message}"
+			};
+			await SendMessage(send);
+		}
+		
+		public async Task RequestSendPrivateMessageToUserInRoomAsync(Guid roomGuid, String message, Guid user)
+		{
+			var send = new []
+			{
+				$"{CommunicationTypeEnum.ServerReceiveRequestSendPrivateMessageToUserInRoom}",
+				$"{roomGuid.ToString()}",
+				$"{message}",
+				$"{user.ToString()}",
 			};
 			await SendMessage(send);
 		}
