@@ -79,6 +79,8 @@ namespace NetClient
 			// Create a new WebSocket instance and connect to the server
 			webSocket = new ClientWebSocket();
 			Uri serverUri = new Uri($"ws://{url}:{port}/");
+			webSocket.Options.AddSubProtocol("permessage-deflate");
+			
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
 		}
 
