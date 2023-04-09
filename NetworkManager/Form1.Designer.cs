@@ -29,6 +29,7 @@ partial class Form1
     /// </summary>
     private void InitializeComponent()
     {
+        components = new System.ComponentModel.Container();
         tabControl1 = new TabControl();
         NetworkTab = new TabPage();
         groupBox5 = new GroupBox();
@@ -69,6 +70,7 @@ partial class Form1
         groupBox3 = new GroupBox();
         RefreshRoomsButton = new Button();
         RoomList = new ListBox();
+        RefreshRoomsListTimer = new System.Windows.Forms.Timer(components);
         tabControl1.SuspendLayout();
         NetworkTab.SuspendLayout();
         groupBox5.SuspendLayout();
@@ -94,6 +96,7 @@ partial class Form1
         tabControl1.SelectedIndex = 0;
         tabControl1.Size = new Size(618, 498);
         tabControl1.TabIndex = 3;
+        tabControl1.SelectedIndexChanged += tabControl1_SelectedIndexChanged;
         // 
         // NetworkTab
         // 
@@ -523,6 +526,11 @@ partial class Form1
         RoomList.TabIndex = 0;
         RoomList.SelectedIndexChanged += RoomList_SelectedIndexChanged;
         // 
+        // RefreshRoomsListTimer
+        // 
+        RefreshRoomsListTimer.Interval = 1500;
+        RefreshRoomsListTimer.Tick += RefreshRoomsListTimer_Tick;
+        // 
         // Form1
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
@@ -599,4 +607,5 @@ partial class Form1
     private TextBox PortInput;
     private Label label6;
     private Label label5;
+    private System.Windows.Forms.Timer RefreshRoomsListTimer;
 }

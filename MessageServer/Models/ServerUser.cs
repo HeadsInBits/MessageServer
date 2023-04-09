@@ -1,4 +1,5 @@
-﻿using LibObjects;
+﻿using System.Transactions;
+using LibObjects;
 
 namespace MessageServer.Models
 {
@@ -11,6 +12,7 @@ namespace MessageServer.Models
             WebSocketID = webSocketId;
             _isValidated = isValidated;
             _userName = userName;
+    
         }
         public int GetWebSocketID()
         {

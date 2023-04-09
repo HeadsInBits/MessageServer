@@ -47,6 +47,7 @@ namespace LibObjects
             if (other._isValidated.ToString() == _isValidated.ToString() && other.GetUserName() == _userName && other.GetUserGuid() == _guid)
             {
                 return true;
+
             }
             else
             {

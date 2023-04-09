@@ -2,6 +2,7 @@ using Microsoft.VisualBasic;
 using System.Collections.ObjectModel;
 using LibObjects;
 using System.Diagnostics.CodeAnalysis;
+using System.Windows.Forms;
 
 namespace NetworkManager;
 
@@ -72,6 +73,19 @@ public partial class Form1 : Form
         netClient.onRoomDestroyed += NetClient_onRecievedRoomDestroyedEvent;
         netClient.onUserDisconnected += NetClient_onRecievedUserDisconnectedEvent;
         netClient.onErrorResponseFromServer += NetClient_onErrorResponseFromServer;
+        netClient.onUserConnent += NetClient_onUserConnent;
+        netClient.onUserLoggedIn += NetClient_OnUserLoggedIn;
+    }
+
+    private void NetClient_OnUserLoggedIn(User obj)
+    {
+        RefreshUsersButton_Click(null, null);
+    }
+
+    private void NetClient_onUserConnent(User obj)
+    {
+        MessageBox.Show("User Logged in: " + obj.GetUserName());
+        RefreshUsersButton_Click(null, null);
     }
 
     private void NetClientOnRoomLeftEvent(Room obj)
@@ -275,6 +289,23 @@ public partial class Form1 : Form
 
     private void Form1_FormClosing(object sender, FormClosingEventArgs e)
     {
-      netClient.Disconnect();
+        netClient.Disconnect();
+    }
+
+    private void RefreshRoomsListTimer_Tick(object sender, EventArgs e)
+    {
+        RefreshRoomsButton_Click(null, null);
+    }
+
+    private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        if (tabControl1.SelectedTab.Text == "Rooms" && netClient.IsClientValidated())
+        {
+            RefreshRoomsListTimer.Enabled = true;
+        }
+        else
+        {
+            RefreshRoomsListTimer.Enabled = false;
+        }
     }
 }

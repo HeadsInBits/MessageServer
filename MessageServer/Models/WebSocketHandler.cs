@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Reflection.Metadata;
 using System.Text;
@@ -9,9 +10,9 @@ namespace MessageServer.Models;
 public class WebSocketHandler
 {
 	private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
-	private readonly WebSocket [] sockets = new WebSocket [10];
+    private readonly ConcurrentDictionary<int, WebSocket> sockets = new ConcurrentDictionary<int, WebSocket>();
 
-	private RoomController _roomController = new RoomController();
+    private RoomController _roomController = new RoomController();
 	private UserController _userController = new UserController();
 
 	DBManager dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
@@ -20,38 +21,55 @@ public class WebSocketHandler
     private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
     public void AddSocket(WebSocket socket)
-	{
-		// Find an available slot in the sockets array
-		int index = Array.IndexOf(sockets, null);
-		if (index >= 0) {
-			sockets [index] = socket;
-			Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine(DateTime.Now  + "Incoming Socket:" + index);
+    {
+        // Generate a unique index for the new socket
+        int index = GetNextIndex();
+        if (sockets.TryAdd(index, socket))
+        {
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine(DateTime.Now + " Incoming Socket:" + index);
             Console.ForegroundColor = ConsoleColor.White;
             StartHandling(socket, index);
-		}
-		else {
-			// No available slots, close the socket
-			socket.Abort();
-		}
-	}
+        }
+        else
+        {
+            // Failed to add the socket, close it
+            socket.Abort();
+        }
+    }
 
-	public async Task Stop()
-	{
-		// Stop handling WebSocket messages
-		cancellation.Cancel();
-		for (var index = 0; index < sockets.Length; index++)
-		{
-			var socket = sockets[index];
-			if (socket != null)
-			{
-				await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Server shutting down",
-					CancellationToken.None);
-			}
-		}
-	}
-	
-	private bool ValidateUser(string[] messageChunks)
+    private int GetNextIndex()
+    {
+        // Generate a unique index for the new socket
+        int newIndex;
+        do
+        {
+            newIndex = new Random().Next();
+        } while (sockets.ContainsKey(newIndex));
+
+        return newIndex;
+    }
+
+    public async Task Stop()
+    {
+        // Stop handling WebSocket messages
+        cancellation.Cancel();
+
+        // Iterate through the sockets dictionary and close each WebSocket connection
+        foreach (var kvp in sockets)
+        {
+            int index = kvp.Key;
+            WebSocket socket = kvp.Value;
+
+            if (socket != null)
+            {
+                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Server shutting down", CancellationToken.None);
+                sockets.TryRemove(index, out WebSocket removedSocket);
+            }
+        }
+    }
+
+    private bool ValidateUser(string[] messageChunks)
 	{
 		if (messageChunks.Length < 3)
 			throw new Exception();
@@ -63,7 +81,7 @@ public class WebSocketHandler
 	{
         // Handle WebSocket messages in a separate thread
         var buffer = new byte[32768];
-        while (!cancellation.IsCancellationRequested)
+        while (!cancellation.IsCancellationRequested && socket.State == WebSocketState.Open)
         {
             try
             {
@@ -71,8 +89,15 @@ public class WebSocketHandler
 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
-                    await HandleDisconnection(socket, index);
-                    sockets[index] = null;
+	
+                    await HandleDisconnection(index);
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing response",
+                        CancellationToken.None);
+
+                    sockets.TryRemove(index, out WebSocket removedSocket);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"{DateTime.Now}: Client Disconnecting Normally: {index}");
+                    Console.ResetColor();
                 }
                 else if (result.MessageType == WebSocketMessageType.Binary ||
                          result.MessageType == WebSocketMessageType.Text)
@@ -85,27 +110,26 @@ public class WebSocketHandler
                     ProcessMessage(index, message);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                // Handle cancellation here
+                Console.WriteLine($"{DateTime.Now} Operation canceled for client {index}");
+                break;
+            }
             catch (WebSocketException ex)
             {
-                if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived ||
-                    socket.State == WebSocketState.Aborted || socket.State == WebSocketState.None)
+                if(socket.State == WebSocketState.Open || 
+                   socket.State == WebSocketState.CloseReceived || 
+                   socket.State == WebSocketState.CloseSent)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"{DateTime.Now}: Client Disconnected : " + index + " EX: " + ex.Message);
-					Console.ResetColor();
-                    await HandleDisconnection(socket, index);
-                    sockets[index] = null;
+                    Console.WriteLine($"{DateTime.Now}: Client Disconnected Via Exception: " + index + " EX: " + ex.Message);
+                    Console.ResetColor();
 
-                    if (socket.State == WebSocketState.CloseReceived)
-                    {
-                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing response",
-                            CancellationToken.None);
-                    }
-                    else
-                    {
-                        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Client disconnected",
-                            CancellationToken.None);
-                    }
+                    await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing response",
+                        CancellationToken.None);
+                    await HandleDisconnection(index);
+                    _ = sockets.TryRemove(index, out WebSocket removedSocket);
 
                 }
             }
@@ -113,20 +137,42 @@ public class WebSocketHandler
             {
                 Console.WriteLine($"{DateTime.Now} Error receiving message: {ex.Message}");
                 // If the error is related to user disconnection, handle it properly
-                await HandleDisconnection(socket, index);
-                sockets[index] = null;
+                await HandleDisconnection(index);
+                sockets.TryRemove(index, out WebSocket removedSocket);
             }
         }
     }
 
-    private async Task HandleDisconnection(WebSocket socket, int index)
+    private async Task HandleDisconnection(int index)
     {
-        await _syncLock.WaitAsync();
+       await _syncLock.WaitAsync();
         try
         {
-            // Disconnect handling code goes here
+            User? userDisconnected = _userController.GetUserProfileFromSocketId(index);
+            if (userDisconnected != null)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("SERVER ATTEMPTED TO HandleDisconnection OF A null UserDisconnected");
+				Console.ResetColor();
+         
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("User:" + index+ " is disconnecting");
+                Console.ResetColor();
+            }
 
+            // Disconnect handling code goes here
+ 
             RemoveUserFromSubscribedRooms(index);
+            _userController.RemoveUser(userDisconnected);
+
+            var connectedClients = _userController.GetConnectedClients().ToList();
+            foreach (var connectedClient in connectedClients)
+            {
+                SendUserDisconnected(userDisconnected, connectedClient);
+            }
 
         }
         catch (Exception ex)
@@ -135,7 +181,7 @@ public class WebSocketHandler
         }
 		finally
         {
-            _syncLock.Release();
+           _syncLock.Release();
         }
     }
 
@@ -146,11 +192,13 @@ public class WebSocketHandler
         if (userDisconnected == null)
             return;
 
-        foreach (var room in _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected))
+        var rooms = _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected).ToList();
+        foreach (var room in rooms)
         {
             _roomController.GetServerRoomFromGUID(room).RemoveUserFromRoom(userDisconnected);
 
-            foreach (var usr in _roomController.GetServerRoomFromGUID(room).GetUsersInRoom())
+            var usersInRoom = _roomController.GetServerRoomFromGUID(room).GetUsersInRoom().ToList();
+            foreach (var usr in usersInRoom)
             {
                 SendUserLeftRoom(usr, room, User.GetJsonFromUser(userDisconnected));
             }
@@ -160,53 +208,9 @@ public class WebSocketHandler
                 RoomDestroyed(_roomController.GetServerRoomFromGUID(room));
             }
         }
-
-		_userController.RemoveUser(userDisconnected);
-
     }
 
-	private void OldDisconnectCode(int index)
-	{
-
-		User userDisconnected = _userController.GetUserProfileFromSocketId(index);
-		var findAllRoomsWhereUserInRoom = _roomController.FindAllServerRoomsWhereUserInServerRoom(userDisconnected);
-		if (findAllRoomsWhereUserInRoom.Count > 0)
-		{
-			string userJson = User.GetJsonFromUser(userDisconnected);
-			for (var i = 0; i < findAllRoomsWhereUserInRoom.Count; i++)
-			{
-				var inRoom = findAllRoomsWhereUserInRoom[i];
-				Room room = _roomController.GetServerRoomFromGUID(inRoom);
-				var usersInRoom = _roomController.GetUsersInRoom(room);
-				bool isOwner = room.GetCreator() == userDisconnected.GetUserName();
-				if (_roomController.IsInRoom(room, userDisconnected))
-				{
-					_roomController.RemoveUserFromServerRoom(userDisconnected, room);
-					for (var index1 = 0; index1 < usersInRoom.Count; index1++)
-					{
-						var user = usersInRoom[index1];
-						if (inRoom != userDisconnected.GetUserGuid())
-						{
-							SendUserLeftRoom(user, inRoom, userJson);
-						}
-					}
-
-					if (isOwner)
-					{
-						RoomDestroyed(room);
-					}
-				}
-			}
-		}
-		_userController.RemoveUser(userDisconnected);
-		//sockets[index] = null;
-		List<User> connectedClients = _userController.GetConnectedClients();
-		for (var i = 0; i < connectedClients.Count; i++)
-		{
-			var user = connectedClients[i];
-			SendUserDisconnected(userDisconnected, user);
-		}
-	}
+	
 
 
 	private void ProcessMessage(int index, string message)
@@ -350,7 +354,7 @@ public class WebSocketHandler
 		
 		_roomController.RemoveUserFromServerRoom(user, room);
 
-		var us = _roomController.GetUsersInRoom(room);
+		var us = _roomController.GetUsersInRoom(room).ToList();
 		for (var i = 0; i < us.Count; i++)
 		{
 			var u = us[i];
@@ -374,7 +378,7 @@ public class WebSocketHandler
 
 	private void RoomDestroyed(Room room)
 	{
-		var us = _roomController.GetUsersInRoom(room);
+		var us = _roomController.GetUsersInRoom(room).ToList();
 		for (var index = 0; index < us.Count; index++)
 		{
 			var u = us[index];
@@ -1046,24 +1050,31 @@ public class WebSocketHandler
 		};
 		SendMessage(i, send);
 	}
-	
-	private void SendCommsToAll(int index, string message)
-	{
-		User user = _userController.GetUserProfileFromSocketId(index);
-		for (int i = 0; i < sockets.Length; i++) {
-			if (sockets [i] != null && i != index) {
-				var send = new []
-				{
-					$"{CommunicationTypeEnum.ClientReceiveCommunicationToAll}",
-					$"{User.GetJsonFromUser(user)}",
-					$"{message}"
-				};
-				SendMessage(index, send);
-			}
-		}
-	}
 
-	private void SendUserListJsonInRoom(int index, Room r, List<User> users, CommunicationTypeEnum com)
+    private void SendCommsToAll(int index, string message)
+    {
+        User user = _userController.GetUserProfileFromSocketId(index);
+
+        // Iterate through the sockets dictionary
+        foreach (var kvp in sockets)
+        {
+            int i = kvp.Key;
+            WebSocket socket = kvp.Value;
+
+            if (socket != null && i != index)
+            {
+                var send = new[]
+                {
+                    $"{CommunicationTypeEnum.ClientReceiveCommunicationToAll}",
+                    $"{User.GetJsonFromUser(user)}",
+                    $"{message}"
+                };
+                SendMessage(index, send);
+            }
+        }
+    }
+
+    private void SendUserListJsonInRoom(int index, Room r, List<User> users, CommunicationTypeEnum com)
 	{
 		var send = new[]
 		{

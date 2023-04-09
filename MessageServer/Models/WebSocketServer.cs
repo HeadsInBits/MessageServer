@@ -48,7 +48,20 @@ namespace MessageServer.Models
 					// Accept WebSocket connection
 					WebSocketContext socketContext = null;
 
-					try {
+                    var webSocketCreationOptions = new WebSocketCreationOptions
+                    {
+                        SubProtocol = null,
+                        KeepAliveInterval = TimeSpan.FromSeconds(30),
+                        IsServer = true,
+                        // Enable compression using WebSocketDeflateOptions
+                        DangerousDeflateOptions = new WebSocketDeflateOptions
+                        {
+							ClientContextTakeover = true,
+							ServerContextTakeover = true
+                        }
+                    };
+
+                    try {
 						socketContext = await context.AcceptWebSocketAsync(subProtocol: null);
                         if (_logginEnabled)
                             Console.WriteLine($"WebSocket Accepted..");
