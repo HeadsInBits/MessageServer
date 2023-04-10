@@ -272,7 +272,7 @@ public class WebSocketHandler
 			
 			//"[ServerReceiveRequestSendPrivateMessageToUserInRoom]:[ROOM_GUID]:[MESSAGE_STRING]:[USER_GUID]"
 			case CommunicationTypeEnum.ServerReceiveRequestSendPrivateMessageToUserInRoom: 
-				ReceivedSendMessageToRoom(index, messageChunks, s);
+				ReceivedSendPrivateMessageToUserInRoom(index, messageChunks, s);
 				break;
 
 			//"[ServerReceiveRequestUsersListJsonInRoom]:[ROOM_GUID]"
