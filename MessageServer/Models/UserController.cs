@@ -1,5 +1,6 @@
 ﻿using LibObjects;
 using System.Collections.Concurrent;
+using System.Drawing;
 
 namespace MessageServer.Models;
 
@@ -10,20 +11,25 @@ public class UserController
 
     public User? GetUserProfileFromSocketId(int SocketId)
     {
+        Console.ForegroundColor = ConsoleColor.DarkMagenta;
         Console.WriteLine($"Searching for user with SocketId: {SocketId}");
 
         foreach (var usr in connectedClients.Values)
         {
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
             Console.WriteLine($"Checking user {usr.GetUserName()} with SocketId: {usr.GetWebSocketID()}");
 
             if (usr.GetWebSocketID() == SocketId)
             {
-                Console.WriteLine($"Found user: {usr.GetUserName()}");
+                Console.WriteLine($"Found user: {usr.GetUserName()} with SocketId: { SocketId}");
+                Console.ResetColor();
                 return usr;
+				
             }
         }
 
-        Console.WriteLine("No user found with the given SocketId.");
+        Console.WriteLine($"No user found with the given SocketId {SocketId}.");
+        Console.ResetColor();
         return null;
     }
     public User? GetUserProfileFromSocketGuid(Guid guid)

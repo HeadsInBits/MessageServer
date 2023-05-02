@@ -19,6 +19,7 @@ public class WebSocketHandler
 
 	private bool logginEnabled = true;
     private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
+    private readonly Random random = new Random();
 
     public void AddSocket(WebSocket socket)
     {
@@ -40,11 +41,10 @@ public class WebSocketHandler
 
     private int GetNextIndex()
     {
-        // Generate a unique index for the new socket
         int newIndex;
         do
         {
-            newIndex = new Random().Next();
+            newIndex = random.Next();
         } while (sockets.ContainsKey(newIndex));
 
         return newIndex;
@@ -145,43 +145,48 @@ public class WebSocketHandler
 
     private async Task HandleDisconnection(int index)
     {
-       await _syncLock.WaitAsync();
+        await _syncLock.WaitAsync();
         try
         {
             User? userDisconnected = _userController.GetUserProfileFromSocketId(index);
-            if (userDisconnected != null)
+            if (userDisconnected == null)
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("SERVER ATTEMPTED TO HandleDisconnection OF A null UserDisconnected");
-				Console.ResetColor();
-         
+                Console.ResetColor();
+                return;
             }
             else
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine("User:" + index+ " is disconnecting");
+                Console.WriteLine("User:" + index + " is disconnecting");
                 Console.ResetColor();
+
+                
+                
             }
 
             // Disconnect handling code goes here
- 
+
             RemoveUserFromSubscribedRooms(index);
-            _userController.RemoveUser(userDisconnected);
+            
 
             var connectedClients = _userController.GetConnectedClients().ToList();
             foreach (var connectedClient in connectedClients)
             {
-                SendUserDisconnected(userDisconnected, connectedClient);
+				if(connectedClient.GetUserName() != userDisconnected.GetUserName())
+                    SendUserDisconnected(userDisconnected, connectedClient);
             }
 
+            _userController.RemoveUser(userDisconnected);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"{DateTime.Now} Error Removing User From Subscribed Room: {ex.Message}");
         }
-		finally
+        finally
         {
-           _syncLock.Release();
+            _syncLock.Release();
         }
     }
 
@@ -994,6 +999,9 @@ public class WebSocketHandler
 	
 	private void SendClientGuid(int index, User? user)
 	{
+		if(user == null) //Todo: Handle this case better when null user.. 
+			return;
+
 		var send = new []
 		{
 			$"{ CommunicationTypeEnum.ClientReceiveClientGuid}",
@@ -1130,8 +1138,13 @@ public class WebSocketHandler
 			Console.ResetColor();
 			return;
         }
-		Console.WriteLine("Index:" + index +  "Socket State: " + sockets[index].State);
 
+        if (logginEnabled)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"Sent To Client {index} A.K.A: ( {_userController.GetUserProfileFromSocketId(index)} ) {Environment.NewLine} Message: {message}");
+            Console.ResetColor();
+        }
 
         // Create a WebSocket message from the buffer
         byte[] buffer = Encoding.UTF8.GetBytes(message);
@@ -1139,10 +1152,6 @@ public class WebSocketHandler
 
 		sockets[index].SendAsync(webSocketMessage, WebSocketMessageType.Text, true, CancellationToken.None);
 		
-		if (logginEnabled) {
-			Console.ForegroundColor = ConsoleColor.Blue;
-			Console.WriteLine($"Sent To Client {index} {_userController.GetUserProfileFromSocketId(index)} Message: {message}");
-			Console.ResetColor();
-		}
+	
 	}
 }
