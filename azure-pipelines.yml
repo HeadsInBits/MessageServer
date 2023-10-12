@@ -14,13 +14,6 @@ variables:
 jobs:
 - job: Build
   steps:
-  - script: |
-      sudo apt-get update
-      sudo apt-get install -y software-properties-common
-      sudo apt-get update
-      sudo apt-get install -y dotnet-sdk-7.0
-    displayName: 'Install .NET 7 SDK'
-
   - script: dotnet --version
     displayName: 'Verify .NET Version'
 
