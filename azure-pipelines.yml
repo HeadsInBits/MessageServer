@@ -1,0 +1,46 @@
+trigger:
+- none
+
+pool:
+  name: Default
+  demands:
+  - 'agent.os -equals linux'
+  - 'Agent.OSArchitecture -equals ARM'
+
+variables:
+  solution: '**/*.sln'
+  buildConfiguration: 'Release'
+
+jobs:
+- job: Build
+  steps:
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y software-properties-common
+      sudo apt-get update
+      sudo apt-get install -y dotnet-sdk-7.0
+    displayName: 'Install .NET 7 SDK'
+
+  - script: dotnet --version
+    displayName: 'Verify .NET Version'
+
+  - script: dotnet restore $(solution)
+    displayName: 'Restore NuGet packages'
+
+  - script: dotnet build $(solution) --configuration $(buildConfiguration)
+    displayName: 'Build the solution'
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.SourcesDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      replaceExistingArchive: true
+
+- job: Publish
+  displayName: 'Publish Artifact'
+  dependsOn: Build
+  steps:
+  - publish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+    artifact: drop
