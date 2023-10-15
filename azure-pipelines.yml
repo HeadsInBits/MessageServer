@@ -8,7 +8,7 @@ pool:
   - 'Agent.OSArchitecture -equals ARM'
 
 variables:
-  solution: '**/MessageServer.sln'
+  solution: '**MessageServer/MessageServer.sln'
   buildConfiguration: 'Release'
 
 jobs:
