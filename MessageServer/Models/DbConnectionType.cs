@@ -3,6 +3,8 @@
     public enum DbConnectionType
     {
         AzureSql,
-        MariaDb
+        MariaDb,
+        InMemory,
+        SqLite
     }
 }

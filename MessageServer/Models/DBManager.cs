@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
 using MySql.Data.MySqlClient;  // MariaDB .NET connector
 using System.Threading;
 using LibObjects;
+using Microsoft.Data.Sqlite;
 
 namespace MessageServer.Models
 {
@@ -27,6 +29,14 @@ namespace MessageServer.Models
                 case DbConnectionType.MariaDb:
                     connectionString = $"Server={server};Database={database};User Id={username};Password={password};";
                     connection = new MySql.Data.MySqlClient.MySqlConnection(connectionString);
+                    break;
+                case DbConnectionType.SqLite:
+                    connectionString = $"Data Source={server}";
+                    connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString);
+                    break;
+                case DbConnectionType.InMemory: 
+                    connectionString = $"Data Source={server};Mode=Memory;Cache=Shared";
+                    connection = new Microsoft.Data.Sqlite.SqliteConnection(connectionString);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -64,7 +74,8 @@ namespace MessageServer.Models
             int numberOfResults;
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = "SELECT COUNT(*) FROM Users WHERE UserName = @UserName AND Password = @Password COLLATE SQL_Latin1_General_CP1_CI_AS";
+               // command.CommandText = "SELECT COUNT(*) FROM Users WHERE UserName = @UserName AND Password = @Password COLLATE SQL_Latin1_General_CP1_CI_AS";
+               command.CommandText = "SELECT COUNT(*) FROM Users WHERE UserName = @UserName AND Password = @Password COLLATE utf8mb4_general_ci";
                 var usernameParam = command.CreateParameter();
                 usernameParam.ParameterName = "@UserName";
                 usernameParam.Value = userName;
@@ -75,15 +86,20 @@ namespace MessageServer.Models
                 passwordParam.Value = passWord;
                 command.Parameters.Add(passwordParam);
 
-                numberOfResults = Convert.ToInt32(command.ExecuteScalar());
+                try {
+                    numberOfResults = Convert.ToInt32(command.ExecuteScalar());
+                    if (logging) {
+                        Console.WriteLine($"Validate Account Found {numberOfResults} Accounts");
+                    }
+
+                    return numberOfResults > 0;
+                }
+                catch (SqlException ex) {
+                    Console.WriteLine($"==== *** SQL EXCEPTION: {ex.Message} *** ====");
+                }
             }
 
-            if (logging)
-            {
-                Console.WriteLine($"Validate Account Found {numberOfResults} Accounts");
-            }
-
-            return numberOfResults > 0;
+            return false;
         }
 
         public void PersistMessageToUser(User user, string message)
