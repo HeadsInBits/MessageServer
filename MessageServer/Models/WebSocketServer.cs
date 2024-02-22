@@ -12,7 +12,7 @@ namespace MessageServer.Models
 		private readonly HttpListener listener = new HttpListener();
 		private readonly WebSocketHandler handler = new WebSocketHandler();
 
-		private readonly DBManager _dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
+		//private readonly DBManager _dbManager = new DBManager("messageserverlogins.database.windows.net", "messages", "Manic", "2CraggStreet");
 
         private readonly bool _logginEnabled = true;
 		private WebSocketServer()

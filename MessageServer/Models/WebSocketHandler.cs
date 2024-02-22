@@ -15,9 +15,9 @@ public class WebSocketHandler
     private RoomController _roomController = new RoomController();
 	private UserController _userController = new UserController();
 
-	DBManager dbManager = new DBManager("rpi4", "MessageServer", "App", "app");
+	DBManager dbManager = new DBManager("localhost", "MessageServer", "manic", "moscow", DbConnectionType.MariaDb);
 
-	private bool logginEnabled = true;
+    private bool logginEnabled = true;
     private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
 
     public void AddSocket(WebSocket socket)
