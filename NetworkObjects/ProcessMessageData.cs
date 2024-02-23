@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Newtonsoft.Json;
+﻿using System.Text;
+using global::System;
+using global::System.Collections.Generic;
 
-namespace LibObjects
+namespace NetworkObjects
 {
 
     public static class ProcessMessageData
     {
         private const string splitter = ":*:";
         private static readonly Dictionary<string, (string remove, string replace)> SafeConvert =
-            new()
+            new Dictionary<string, (string remove, string replace)>()
             {
                 { splitter, (splitter, "") },
             };

@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\LibObjects\LibObjects.csproj" />
+      <ProjectReference Include="..\NetworkObjects\NetworkObjects.csproj" />
     </ItemGroup>
 
 </Project>

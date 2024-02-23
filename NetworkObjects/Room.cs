@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using global::System;
+using global::System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace LibObjects
+namespace NetworkObjects
 {
     public class Room : IEquatable<Room>
 	{
@@ -167,7 +166,7 @@ namespace LibObjects
 
         public bool Equals(Room other)
         {
-           if(this.GetGuid == other.GetGuid && this._isPublic == other._isPublic && this._roomName == other._roomName)
+           if(this.GetGuid() == other.GetGuid() && this._isPublic == other._isPublic && this._roomName == other._roomName)
 				return true;
 		   else return false;
         }

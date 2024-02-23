@@ -4,8 +4,8 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using MySql.Data.MySqlClient;  // MariaDB .NET connector
 using System.Threading;
-using LibObjects;
 using Microsoft.Data.Sqlite;
+using NetworkObjects;
 
 namespace MessageServer.Models
 {

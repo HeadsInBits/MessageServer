@@ -6,4 +6,6 @@
 	<s:Boolean x:Key="/Default/ResxEditorPersonal/CheckedGroups/=NetworkManager_002FForm1/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/ResxEditorPersonal/CheckedGroups/=NetworkManager_002FNotificationForm/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/ResxEditorPersonal/CheckedGroups/=NetworkManager_002FRoomForm/@EntryIndexedValue">True</s:Boolean>
-	<s:Boolean x:Key="/Default/ResxEditorPersonal/Initialized/@EntryValue">True</s:Boolean></wpf:ResourceDictionary>
+	<s:Boolean x:Key="/Default/ResxEditorPersonal/Initialized/@EntryValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UnloadedProject/UnloadedProjects/=26f200c2_002D28f6_002D4455_002Da338_002D6995ac0edd44_0023NetworkManager/@EntryIndexedValue">True</s:Boolean>
+	</wpf:ResourceDictionary>

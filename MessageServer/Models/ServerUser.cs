@@ -1,5 +1,5 @@
 ﻿using System.Transactions;
-using LibObjects;
+using NetworkObjects;
 
 namespace MessageServer.Models
 {

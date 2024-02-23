@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Reflection.Metadata;
 using System.Text;
-using LibObjects;
+using NetworkObjects;
 
 namespace MessageServer.Models;
 

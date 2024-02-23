@@ -1,8 +1,7 @@
 ﻿using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text;
-using LibObjects;
-
+using NetworkObjects;
 
 namespace NetClient
 {

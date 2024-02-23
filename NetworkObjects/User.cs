@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
+﻿using global::System;
+using global::System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace LibObjects
+namespace NetworkObjects
 {
     public class User : IEquatable<User>
     {

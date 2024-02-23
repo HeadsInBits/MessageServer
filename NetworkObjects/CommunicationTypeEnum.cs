@@ -1,4 +1,4 @@
-namespace LibObjects
+namespace NetworkObjects
 {
     public enum CommunicationTypeEnum
     {

@@ -1,0 +1,14 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:networkManagerAvalonia="clr-namespace:NetworkManagerAvalonia"
+        x:Class="NetworkManagerAvalonia.MainWindow"
+        Title="Network Manager">
+    <StackPanel Margin="10">
+        <TextBox x:Name="AddressInput" Watermark="Address" Margin="0,0,0,10"/>
+        <TextBox x:Name="PortInput" Watermark="Port" Margin="0,0,0,10"/>
+        <TextBox x:Name="UserInput" Watermark="Username" Margin="0,0,0,10"/>
+        <Button Content="Login" Click="LoginButton_Click"/>
+        <Button Content="Refresh Users" Click="RefreshUsersButton_Click"/>
+        <!-- Add other UI elements here as needed -->
+    </StackPanel>
+</Window>
