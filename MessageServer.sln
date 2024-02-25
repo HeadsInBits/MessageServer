@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetClient", "NetClient\NetC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetworkManager", "NetworkManager\NetworkManager.csproj", "{26F200C2-28F6-4455-A338-6995AC0EDD44}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaApplication2", "AvaloniaApplication2\AvaloniaApplication2.csproj", "{1F6D7110-114D-4ACA-96B1-0F5AA2D1243A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvaloniaNetworkClient", "AvaloniaNetworkClient\AvaloniaNetworkClient.csproj", "{1F6D7110-114D-4ACA-96B1-0F5AA2D1243A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkObjects", "NetworkObjects\NetworkObjects.csproj", "{520B39E5-5209-452E-9A65-451548635422}"
 EndProject
