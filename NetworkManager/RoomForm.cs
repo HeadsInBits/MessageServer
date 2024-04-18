@@ -1,5 +1,6 @@
-﻿using LibObjects;
-using System.Windows.Forms;
+﻿
+
+using NetworkObjects;
 
 namespace NetworkManager
 {

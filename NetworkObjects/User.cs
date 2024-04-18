@@ -81,6 +81,7 @@ namespace NetworkObjects
 
         public static User GetUserFromJson(string jsonString)
         {
+            Console.WriteLine("trying to deserialize user");
             return new User(JsonConvert.DeserializeObject<UserJsonData>(jsonString));
         }
 
@@ -98,6 +99,7 @@ namespace NetworkObjects
 
         public static List<User> GetUsersListFromJson(string jsonData)
         {
+            Console.WriteLine("trying to deserialize user list");
             List<UserJsonData> usersJsonDataList = JsonConvert.DeserializeObject<List<UserJsonData>>(jsonData);
             List<User> users = new List<User>();
             foreach (var data in usersJsonDataList)

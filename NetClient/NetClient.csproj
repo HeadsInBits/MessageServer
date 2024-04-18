@@ -15,4 +15,8 @@
       <ProjectReference Include="..\NetworkObjects\NetworkObjects.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ReferencePathWithRefAssemblies Update="C:\Users\Sarah Rawlinson\.nuget\packages\newtonsoft.json\13.0.3\lib\net6.0\Newtonsoft.Json.dll" />
+    </ItemGroup>
+
 </Project>

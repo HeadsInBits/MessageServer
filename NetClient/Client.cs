@@ -75,6 +75,7 @@ namespace NetClient
 		
 		public async Task Connect(string url, string port)
 		{
+			Console.WriteLine("Connect!!!!!!!!!!!");
 			// Create a new WebSocket instance and connect to the server
 			webSocket = new ClientWebSocket();
 			Uri serverUri = new Uri($"ws://{url}:{port}/");
@@ -85,6 +86,7 @@ namespace NetClient
 
 		public async Task Connect()
 		{
+			Console.WriteLine("Connect!!!!!!!!!!!");
 			// Create a new WebSocket instance and connect to the server
 			webSocket = new ClientWebSocket();
 			await webSocket.ConnectAsync(serverUri, CancellationToken.None);
@@ -92,6 +94,7 @@ namespace NetClient
 		
 		public async void Disconnect()
 		{
+			Console.WriteLine("Disconnect!!!!!!!!!!!");
 			await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Destroyed", CancellationToken.None);
 		}
 
@@ -101,6 +104,7 @@ namespace NetClient
 			ArraySegment<byte> receiveSegment = new ArraySegment<byte>(receiveBuffer);
 			while (webSocket.State == WebSocketState.Open)
 			{
+				Console.WriteLine("still listening");
 				WebSocketReceiveResult result = await webSocket.ReceiveAsync(receiveSegment, CancellationToken.None);
 				if (result.MessageType == WebSocketMessageType.Text)
 				{
@@ -112,6 +116,7 @@ namespace NetClient
 					}
 				}
 			}
+			Console.WriteLine("Stopped Listening");
 		}
 		
 		private async Task SendMessage(string[] messageArray)
@@ -145,7 +150,6 @@ namespace NetClient
 		
 		private bool ProcessIncomingMessage(string message)
 		{
-			Console.WriteLine("INCOMING MESSAGE!: " + message);
 			onIncomingWebSocketMessageEvent?.Invoke(message);
 
 			string [] messageChunks = ProcessMessageData.UnpackMessageSafe(message);
@@ -469,13 +473,22 @@ namespace NetClient
 
 		private void ReceivedUserInfo(string[] messageChunks)
 		{
+			Console.WriteLine("Got User Info");
+			foreach (var chunk in messageChunks)
+			{
+				Console.WriteLine($"chunk = {chunk}");
+			}
 			User guidUser = ProcessMessageData.GetUserFromMessageFormatStringJsonUser(messageChunks);
+			Console.WriteLine($"Got user {guidUser}");
 			Guid guid = guidUser.GetUserGuid();
+			Console.WriteLine($"Got guid {guid}");
 			if (guid == ClientID)
 			{
 				ClientUser = guidUser;
+				Console.WriteLine($"This is the client user");
 			}
 			onRecievedUserWithGuidEvent?.Invoke((guidUser, guid));
+			Console.WriteLine($"event sent");
 		}
 
 		private void ReceivedUserLeftRoom(string[] messageChunks)
@@ -483,7 +496,6 @@ namespace NetClient
 			User leftUser =
 				ProcessMessageData.GetUserAndGuidFromFormatStringGuidUserJson(messageChunks, out var guidLeft);
 			onUserLeftRoom?.Invoke((leftUser, guidLeft));
-			Console.WriteLine($"{leftUser.GetUserName()} left room");
 		}
 
 		private void ReceivedUserJoinedRoom(string[] messageChunks)
@@ -491,7 +503,6 @@ namespace NetClient
 			var joinedUser =
 				ProcessMessageData.GetUserAndGuidFromFormatStringGuidUserJson(messageChunks, out var guidJoined);
 			onUserJoinedRoom?.Invoke((joinedUser, guidJoined));
-			Console.WriteLine($"{joinedUser.GetUserName()} joined room");
 		}
 
 		private void ReceivedRoomMessage(string[] messageChunks)
@@ -512,28 +523,24 @@ namespace NetClient
 		{
 			Room fromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson( messageChunks);
 			onRoomCreated?.Invoke(fromJson);
-			Console.WriteLine($"created room: {fromJson.GetGuid().ToString()} has been created");
 		}
 
 		private void ReceivedRoomDestroyed(string[] messageChunks)
 		{
 			Room destroyedRoomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
 			onRoomDestroyed?.Invoke(destroyedRoomFromJson);
-			Console.WriteLine($"room has been destroyed: {destroyedRoomFromJson.GetGuid().ToString()}");
 		}
 
 		private void ReceivedRoomJoined(string[] messageChunks)
 		{
 			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
 			onRoomJoined?.Invoke(roomFromJson);
-			Console.WriteLine($"joined room: {roomFromJson.GetGuid().ToString()}");
 		}
 		
 		private void ReceivedRoomLeft(string[] messageChunks)
 		{
 			Room roomFromJson = ProcessMessageData.GetRoomFromMessageFormatStringRoomJson(messageChunks);
 			onRoomLeft?.Invoke(roomFromJson);
-			Console.WriteLine($"left room: {roomFromJson.GetGuid().ToString()}");
 		}
 
 		private void ReceivedRoomListJson(string[] messageChunks)
