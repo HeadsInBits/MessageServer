@@ -33,15 +33,19 @@
             SendMessageButton = new Button();
             RefreshUsersButton = new Button();
             MessageInput = new RichTextBox();
+            menuStrip1 = new MenuStrip();
+            roomToolStripMenuItem = new ToolStripMenuItem();
+            updateRoomMetaDataToolStripMenuItem = new ToolStripMenuItem();
+            menuStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // RoomUsersList
             // 
             RoomUsersList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             RoomUsersList.FormattingEnabled = true;
-            RoomUsersList.Location = new Point(10, 19);
+            RoomUsersList.Location = new Point(10, 32);
             RoomUsersList.Name = "RoomUsersList";
-            RoomUsersList.Size = new Size(121, 251);
+            RoomUsersList.Size = new Size(121, 472);
             RoomUsersList.TabIndex = 0;
             // 
             // RecievedMessagesRoomList
@@ -49,16 +53,16 @@
             RecievedMessagesRoomList.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             RecievedMessagesRoomList.BorderStyle = BorderStyle.FixedSingle;
             RecievedMessagesRoomList.FormattingEnabled = true;
-            RecievedMessagesRoomList.Location = new Point(135, 19);
+            RecievedMessagesRoomList.Location = new Point(135, 32);
             RecievedMessagesRoomList.Name = "RecievedMessagesRoomList";
-            RecievedMessagesRoomList.Size = new Size(338, 249);
+            RecievedMessagesRoomList.Size = new Size(507, 470);
             RecievedMessagesRoomList.TabIndex = 1;
             // 
             // SendMessageButton
             // 
             SendMessageButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             SendMessageButton.Font = new Font("InputMono", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            SendMessageButton.Location = new Point(348, 273);
+            SendMessageButton.Location = new Point(517, 515);
             SendMessageButton.Name = "SendMessageButton";
             SendMessageButton.Size = new Size(125, 41);
             SendMessageButton.TabIndex = 3;
@@ -69,7 +73,7 @@
             // RefreshUsersButton
             // 
             RefreshUsersButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            RefreshUsersButton.Location = new Point(10, 273);
+            RefreshUsersButton.Location = new Point(10, 515);
             RefreshUsersButton.Name = "RefreshUsersButton";
             RefreshUsersButton.Size = new Size(120, 41);
             RefreshUsersButton.TabIndex = 4;
@@ -81,11 +85,34 @@
             // 
             MessageInput.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             MessageInput.Font = new Font("Anka/Coder Narrow", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            MessageInput.Location = new Point(136, 273);
+            MessageInput.Location = new Point(136, 515);
             MessageInput.Name = "MessageInput";
-            MessageInput.Size = new Size(206, 41);
+            MessageInput.Size = new Size(375, 41);
             MessageInput.TabIndex = 5;
             MessageInput.Text = "";
+            // 
+            // menuStrip1
+            // 
+            menuStrip1.Items.AddRange(new ToolStripItem[] { roomToolStripMenuItem });
+            menuStrip1.Location = new Point(0, 0);
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.Size = new Size(653, 24);
+            menuStrip1.TabIndex = 6;
+            menuStrip1.Text = "menuStrip1";
+            // 
+            // roomToolStripMenuItem
+            // 
+            roomToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { updateRoomMetaDataToolStripMenuItem });
+            roomToolStripMenuItem.Name = "roomToolStripMenuItem";
+            roomToolStripMenuItem.Size = new Size(51, 20);
+            roomToolStripMenuItem.Text = "Room";
+            // 
+            // updateRoomMetaDataToolStripMenuItem
+            // 
+            updateRoomMetaDataToolStripMenuItem.Name = "updateRoomMetaDataToolStripMenuItem";
+            updateRoomMetaDataToolStripMenuItem.Size = new Size(201, 22);
+            updateRoomMetaDataToolStripMenuItem.Text = "Update Room MetaData";
+            updateRoomMetaDataToolStripMenuItem.Click += updateRoomMetaDataToolStripMenuItem_Click;
             // 
             // RoomForm
             // 
@@ -93,21 +120,26 @@
             AutoScaleMode = AutoScaleMode.Font;
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
             BackColor = Color.SeaShell;
-            ClientSize = new Size(484, 325);
+            ClientSize = new Size(653, 567);
             Controls.Add(MessageInput);
             Controls.Add(RefreshUsersButton);
             Controls.Add(SendMessageButton);
             Controls.Add(RecievedMessagesRoomList);
             Controls.Add(RoomUsersList);
+            Controls.Add(menuStrip1);
             DoubleBuffered = true;
             Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point);
+            MainMenuStrip = menuStrip1;
             MinimumSize = new Size(139, 155);
             Name = "RoomForm";
             SizeGripStyle = SizeGripStyle.Show;
             StartPosition = FormStartPosition.CenterScreen;
             FormClosing += RoomForm_FormClosing;
             Load += RoomForm_Load;
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -117,5 +149,8 @@
         private Button SendMessageButton;
         private Button RefreshUsersButton;
         private RichTextBox MessageInput;
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem roomToolStripMenuItem;
+        private ToolStripMenuItem updateRoomMetaDataToolStripMenuItem;
     }
 }

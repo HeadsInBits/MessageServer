@@ -37,6 +37,7 @@ namespace NetworkObjects
         ClientReceiveRoomApprovedUserListPaginated, //implemented on client & server
         ClientReceiveUserLoggedIn, //implemented on client & server
         ClientReceivePrivateMessageInRoom,
+        ClientRecieveRoomMetaUpdate,
         /// <summary>
         /// MessageFromClient
         /// </summary>
@@ -61,6 +62,7 @@ namespace NetworkObjects
         ServerReceiveRequestRemoveApproveFromUserInRoom, //implemented on client & server
         ServerReceiveRequestRoomBannedUserList, //implemented on client & server
         ServerReceiveRequestRoomApprovedUserList, //implemented on client & server
-        ServerReceiveRequestSendPrivateMessageToUserInRoom, //implemented on client & server
+        ServerReceiveRequestSendPrivateMessageToUserInRoom,//implemented on client & server
+        ServerReceiveRequestUpdateRoomMetaData
     }
 }

@@ -52,7 +52,7 @@ public partial class Form1 : Form
             return;
         }
 
-        netClient.RequestCreateRoom("Network-Manager.ChatApp", (int)MaxMembersInput.Value, PublicRoomImput.Checked, RoomNameInput.Text);
+        netClient.RequestCreateRoom(new Dictionary<string, string>{{"AppName", "Network-Manager.ChatApp"} }, (int)MaxMembersInput.Value, PublicRoomImput.Checked, RoomNameInput.Text);
     }
 
     private void Form1_Load(object sender, EventArgs e)
@@ -271,12 +271,13 @@ public partial class Form1 : Form
 
         RoomNameLabel.Text = "Room Name: " + roomInfo.GetRoomName();
         RoomCreatorLabel.Text = "Room Creator: " + roomInfo.GetCreator();
-        MetaDataLabel.Text = "Meta Data: " + roomInfo.GetMeta();
+        MetaDataLabel.Text = "Meta Data: " + roomInfo.GetMeta().ToString();
         AccessLevelLabel.Text = "Access Level: " + roomInfo.GetAccessLevel();
         RoomLockedLabel.Text = "Room Locked: " + roomInfo.GetIsRoomLocked();
         MaxMembersLabel.Text = "Maximum Members: " + roomInfo.GetRoomLimit();
         CreationDateLabel.Text = "Creation Date: " + roomInfo.GetCreationDate();
         GUIDLabel.Text = "GUID: " + roomInfo.GetGuid();
+        metaDataGridView.DataSource = roomInfo.GetMeta().ToArray();
 
     }
 

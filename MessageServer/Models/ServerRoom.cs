@@ -20,7 +20,7 @@ public class ServerRoom : Room
 
     }
 
-    public ServerRoom(User creator, int roomLimit, bool isPublic, string meta, string roomName) : base()
+    public ServerRoom(User creator, int roomLimit, bool isPublic, Dictionary<string,string> meta, string roomName) : base()
     {
     	_creator = creator.GetUserName();
     	_roomLimit = roomLimit;
@@ -83,7 +83,7 @@ public class ServerRoom : Room
                 return RoomStatusCodes.Ok;
             }
         }
-        return RoomStatusCodes.Ok;
+        return RoomStatusCodes.Fail;
 
     }
 

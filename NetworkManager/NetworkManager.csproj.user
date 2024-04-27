@@ -11,5 +11,8 @@
     <Compile Update="RoomForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="UpdateMetaDataForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
 </Project>

@@ -74,5 +74,14 @@ namespace NetworkManager
         {
             myClient.RequestGetUsersInRoomAsync(thisRoom.GetGuid());
         }
+
+        private void updateRoomMetaDataToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            UpdateMetaDataForm metaDataForm = new UpdateMetaDataForm(thisRoom.GetMeta());
+            if (metaDataForm.ShowDialog() == DialogResult.OK)
+            {
+                myClient.RequestRoomMetaUpdate(thisRoom.GetGuid(), thisRoom.GetMeta());
+            }
+        }
     }
 }

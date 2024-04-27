@@ -1,6 +1,7 @@
 ﻿using global::System;
 using global::System.Collections.Generic;
 using Newtonsoft.Json;
+using System.Runtime.InteropServices;
 
 namespace NetworkObjects
 {
@@ -15,7 +16,7 @@ namespace NetworkObjects
 			public string Creator;
 			public int RoomLimit;
 			public bool IsPublic;
-			public string Meta;
+			public Dictionary<string, string>? Meta;
 		}
 
 		protected RoomJsonData GetJsonDataFromRoom()
@@ -53,7 +54,8 @@ namespace NetworkObjects
 			RoomLocked,
 			Full,
 			AlreadyJoined,
-			Private
+			Private,
+			Fail
 		}
 		
 		
@@ -65,7 +67,7 @@ namespace NetworkObjects
 		protected string _creator;
 		protected int _roomLimit;
 		protected bool _isPublic;
-		protected string _meta;
+		protected Dictionary<string, string> _meta;
 		public const int NumberOfRoomsToSendInMessage = 20;
 
 		public sealed override int GetHashCode()
@@ -83,9 +85,14 @@ namespace NetworkObjects
 			return _roomName;
 		}
 
-		public string GetMeta()
+		public Dictionary<string,string> GetMeta()
 		{
 			return _meta;
+		}
+
+		public void UpdateMeta(Dictionary<string, string> metaData)
+		{
+			_meta = metaData;
 		}
 
 		public Guid GetGuid()

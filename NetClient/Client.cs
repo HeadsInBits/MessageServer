@@ -1,6 +1,7 @@
 ﻿using System.Net.WebSockets;
 using System.Security.Authentication;
 using System.Text;
+using System.Text.Json;
 using NetworkObjects;
 
 namespace NetClient
@@ -95,7 +96,8 @@ namespace NetClient
 		public async void Disconnect()
 		{
 			Console.WriteLine("Disconnect!!!!!!!!!!!");
-			await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Destroyed", CancellationToken.None);
+			if(webSocket !=null)
+				await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Destroyed", CancellationToken.None);
 		}
 
 		public async Task Listen()
@@ -121,6 +123,8 @@ namespace NetClient
 		
 		private async Task SendMessage(string[] messageArray)
 		{
+			if (webSocket == null)
+				return;
 			string message = ProcessMessageData.BuildMessageSafe(messageArray);
         	ArraySegment<byte> buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(message));
         	await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
@@ -664,14 +668,14 @@ namespace NetClient
 			await SendMessage(send);
 		}
 
-		public async Task RequestCreateRoom(string meta, int roomSize, bool isPublic, string nameOfRoom)
+		public async Task RequestCreateRoom(Dictionary<string, string> meta, int roomSize, bool isPublic, string nameOfRoom)
 		{
 			var send = new []
 			{
 				$"{CommunicationTypeEnum.ServerReceiveRequestCreateRoom}",
 				$"{roomSize.ToString()}",
 				$"{(isPublic?"PUBLIC":"PRIVATE")}",
-				$"{meta}",
+				$"{JsonSerializer.Serialize(meta)}",
 				$"{nameOfRoom}"
 			};
 			await SendMessage(send);
@@ -870,6 +874,17 @@ namespace NetClient
 			};
 			await SendMessage(send);
 		}
+
+		public async Task RequestRoomMetaUpdate(Guid roomID, Dictionary<string,string> metaData)
+		{
+            var send = new[]
+    {
+                $"{CommunicationTypeEnum.ServerReceiveRequestUpdateRoomMetaData}",
+                $"{roomID.ToString()}",
+				$"{JsonSerializer.Serialize<Dictionary<string,string>>(metaData)}"
+            };
+            await SendMessage(send);
+        }
 		
 	}
 }

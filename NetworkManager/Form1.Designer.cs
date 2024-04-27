@@ -51,6 +51,7 @@ partial class Form1
         RefreshUsersButton = new Button();
         UserList = new ListBox();
         RoomTab = new TabPage();
+        metaDataGridView = new DataGridView();
         JoinRoomButton = new Button();
         groupBox4 = new GroupBox();
         label4 = new Label();
@@ -79,6 +80,7 @@ partial class Form1
         UsersTab.SuspendLayout();
         groupBox2.SuspendLayout();
         RoomTab.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)metaDataGridView).BeginInit();
         groupBox4.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)MaxMembersInput).BeginInit();
         groupBox3.SuspendLayout();
@@ -294,6 +296,7 @@ partial class Form1
         // 
         // RoomTab
         // 
+        RoomTab.Controls.Add(metaDataGridView);
         RoomTab.Controls.Add(JoinRoomButton);
         RoomTab.Controls.Add(groupBox4);
         RoomTab.Controls.Add(GUIDLabel);
@@ -311,6 +314,22 @@ partial class Form1
         RoomTab.TabIndex = 2;
         RoomTab.Text = "Rooms";
         RoomTab.UseVisualStyleBackColor = true;
+        // 
+        // metaDataGridView
+        // 
+        metaDataGridView.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        metaDataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+        metaDataGridView.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+        metaDataGridView.BackgroundColor = SystemColors.Info;
+        metaDataGridView.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+        metaDataGridView.Location = new Point(267, 139);
+        metaDataGridView.MultiSelect = false;
+        metaDataGridView.Name = "metaDataGridView";
+        metaDataGridView.ReadOnly = true;
+        metaDataGridView.RowHeadersVisible = false;
+        metaDataGridView.RowTemplate.Height = 25;
+        metaDataGridView.Size = new Size(335, 134);
+        metaDataGridView.TabIndex = 13;
         // 
         // JoinRoomButton
         // 
@@ -538,7 +557,6 @@ partial class Form1
         BackColor = Color.FromArgb(224, 224, 224);
         ClientSize = new Size(618, 498);
         Controls.Add(tabControl1);
-        FormBorderStyle = FormBorderStyle.FixedSingle;
         MinimumSize = new Size(550, 350);
         Name = "Form1";
         Text = "Network Manager";
@@ -558,6 +576,7 @@ partial class Form1
         groupBox2.PerformLayout();
         RoomTab.ResumeLayout(false);
         RoomTab.PerformLayout();
+        ((System.ComponentModel.ISupportInitialize)metaDataGridView).EndInit();
         groupBox4.ResumeLayout(false);
         groupBox4.PerformLayout();
         ((System.ComponentModel.ISupportInitialize)MaxMembersInput).EndInit();
@@ -608,4 +627,5 @@ partial class Form1
     private Label label6;
     private Label label5;
     private System.Windows.Forms.Timer RefreshRoomsListTimer;
+    private DataGridView metaDataGridView;
 }

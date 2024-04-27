@@ -11,7 +11,7 @@ public class RoomController
 
 	public ServerRoom CreateNewServerRoom(User ServerRoomCreator, string [] messageChunks)
 	{
-		ServerRoom tmpServerRoom = new ServerRoom(ServerRoomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", messageChunks [3],messageChunks [4]);
+		ServerRoom tmpServerRoom = new ServerRoom(ServerRoomCreator, int.Parse(messageChunks [1]), messageChunks [2].ToUpper() == "PUBLIC", JsonSerializer.Deserialize<Dictionary<string,string>>(messageChunks [3]),messageChunks [4]);
 		ServerRoomDictionary.Add(tmpServerRoom.GetGuid(), tmpServerRoom);
 		return tmpServerRoom;
 	}
@@ -84,7 +84,10 @@ public class RoomController
 
 	public void RemoveUserFromServerRoom(User user, Room room)
 	{
-		ServerRoomDictionary[room.GetGuid()].RemoveUserFromRoom(user);
+		if (ServerRoomDictionary[room.GetGuid()].RemoveUserFromRoom(user) != Room.RoomStatusCodes.Ok)
+		{
+			throw new Exception("Failed to remove User from room");
+		}
 	}
 	
 	public void RemoveUserFromBanListInServerRoom(User user, Room room)

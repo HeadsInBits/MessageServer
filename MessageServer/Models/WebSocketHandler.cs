@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Text.Json;
 using NetworkObjects;
 
 namespace MessageServer.Models;
@@ -14,7 +15,7 @@ public class WebSocketHandler {
     private RoomController _roomController = new RoomController();
     private UserController _userController = new UserController();
 
-    DBManager dbManager = new DBManager("rpi4", "MessageServer", "manic", "moscow", DbConnectionType.MariaDb);
+    DBManager dbManager = new DBManager("192.168.1.250", "MessageServer", "manic", "moscow", DbConnectionType.MariaDb);
 
     private bool logginEnabled = true;
     private readonly SemaphoreSlim _syncLock = new SemaphoreSlim(1, 1);
@@ -294,11 +295,22 @@ public class WebSocketHandler {
             case CommunicationTypeEnum.ServerReceiveRequestRoomApprovedUserList:
                 ReceivedRequestApprovedUsersListJsonInRoom(index, Guid.Parse(messageChunks[1]));
                 break;
+            case CommunicationTypeEnum.ServerReceiveRequestUpdateRoomMetaData:
+                ReceivedRequestUpdateRoomMeta(index, Guid.Parse(messageChunks[1]),JsonSerializer.Deserialize<Dictionary<string,string>>(messageChunks[2]));
+                break;
 
             default:
                 SendErrorMessage(index, s, "Command not implemented");
                 break;
         }
+    }
+
+    private void ReceivedRequestUpdateRoomMeta(int index, Guid guid, Dictionary<string,string> v)
+    {
+        if (_roomController.RoomExists(guid))
+            _roomController.GetServerRoomFromGUID(guid).UpdateMeta(v);
+        else
+            throw new KeyNotFoundException();
     }
 
     void ReceivedRequestRemoveUserFromRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
@@ -346,7 +358,7 @@ public class WebSocketHandler {
         _roomController.DestroyServerRoom(room.GetGuid());
     }
 
-    void ReceivedRequestBanUserFromRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
+    private void ReceivedRequestBanUserFromRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
         User requester = _userController.GetUserProfileFromSocketId(index);
         Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
         if (!_roomController.RoomExists(room.GetGuid())) {
@@ -363,7 +375,7 @@ public class WebSocketHandler {
         _roomController.AddUserToBanListInServerRoom(user, room);
     }
 
-    void ReceivedRequestRemoveBanFromUserInRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
+    private void ReceivedRequestRemoveBanFromUserInRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
         User requester = _userController.GetUserProfileFromSocketId(index);
         Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
         if (!_roomController.RoomExists(room.GetGuid())) {
@@ -380,7 +392,7 @@ public class WebSocketHandler {
         _roomController.RemoveUserFromBanListInServerRoom(user, room);
     }
 
-    void ReceivedRequestApproveUserFromRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
+    private void ReceivedRequestApproveUserFromRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
         User requester = _userController.GetUserProfileFromSocketId(index);
         Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
         if (!_roomController.RoomExists(room.GetGuid())) {
@@ -397,7 +409,7 @@ public class WebSocketHandler {
         _roomController.ApproveUserFromRoom(user, room);
     }
 
-    void ReceivedRequestRemoveApproveFromUserInRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
+    private void ReceivedRequestRemoveApproveFromUserInRoom(int index, string[] messageChunks, CommunicationTypeEnum com) {
         User requester = _userController.GetUserProfileFromSocketId(index);
         Room room = ProcessMessageData.GetUserRoomFromMessageFormatStringJsonUserJsonRoom(messageChunks, out User user);
         if (!_roomController.RoomExists(room.GetGuid())) {
