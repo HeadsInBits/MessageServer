@@ -5,6 +5,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using NetworkObjects;
+using Org.BouncyCastle.Tls.Crypto.Impl;
 
 namespace MessageServer.Models;
 
@@ -62,7 +63,7 @@ public class WebSocketHandler {
         }
     }
 
-    private bool ValidateUser(string[] messageChunks) {
+    private bool ValidateMessage(string[] messageChunks) {
         if (messageChunks.Length < 3)
             throw new Exception();
 
@@ -688,26 +689,37 @@ public class WebSocketHandler {
     }
 
     private void ReceivedAuthenticate(int index, string[] message) {
-        if (ValidateUser(message)) {
-            bool unique = _userController.CreateUser(message[1], true, index, out User tmpUser);
-
-            if (unique) {
+        if (ValidateMessage(message)) {
+            ServerUser tmpUser;
+            try
+            {
+                tmpUser = _userController.CreateUser(message[1], true, index);
                 Console.WriteLine("Added User to Client list:" + index + "User:" + tmpUser.GetUserName());
-            }
-            else {
-                Console.WriteLine("User Already Authenticated: " + index + "User:" + tmpUser.GetUserName());
-            }
+                
+                SendAuthenticationPassed(index);
 
-            foreach (var user in _userController.GetConnectedClients()) {
-                if (user.GetUserName() != tmpUser.GetUserName()) {
-                    SendUserLoggedIn(_userController.GetWebSocketIdFromUser(user), tmpUser);
+                foreach (var user in _userController.GetConnectedClients())
+                {
+                    if (user.GetUserName() != tmpUser.GetUserName())
+                    {
+                        SendUserLoggedIn(_userController.GetWebSocketIdFromUser(user), tmpUser);
+                    }
                 }
+
+                
+            }
+            catch (ArgumentException e)
+            {
+                Console.WriteLine("User Already Authenticated: " + index + "MessageRecieved:" + message);
+                //SendAuthenticationFailed(index);
+                //todo: Send a message to client to say already logged in...
             }
 
-            SendAuthenticationPassed(index);
+
         }
         else // not authenticated
         {
+            Console.WriteLine("User Failed User / Pass Check: " + index + "MessageRecieved:" + message);
             SendAuthenticationFailed(index);
         }
     }

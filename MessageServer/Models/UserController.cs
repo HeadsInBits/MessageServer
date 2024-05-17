@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Drawing;
+using MySqlX.XDevAPI;
 using NetworkObjects;
 
 namespace MessageServer.Models;
@@ -94,21 +95,26 @@ public class UserController
         return connectedClients.Values.Cast<User>().ToList();
     }
 
-    public bool CreateUser(string name, bool validated, int index, out User? user)
+    public ServerUser CreateUser(string name, bool validated, int index)
 	{
-		user = null;
 		ServerUser serverUser = new ServerUser(name, validated, index);
-		bool unique = userUnique(serverUser);
-		if (unique)
-		{
+
+		if (userUnique(serverUser))	{
             connectedClients.TryAdd(serverUser.GetUserGuid(), serverUser);
-            user = serverUser;
-		}
-		return unique;
+            return serverUser;
+        }
+        throw new ArgumentException();
 	}
 
     public bool userUnique(ServerUser user)
     {
-        return !connectedClients.Values.Any(client => user.GetWebSocketID() == client.GetWebSocketID());
+        foreach(var usr in connectedClients)
+        {
+            if (user.GetUserName() == usr.Value.GetUserName())
+            {
+                return false;
+            }
+        }
+        return true;
     }
 }
