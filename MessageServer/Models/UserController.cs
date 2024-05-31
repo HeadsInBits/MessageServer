@@ -2,6 +2,7 @@
 using System.Drawing;
 using MySqlX.XDevAPI;
 using NetworkObjects;
+using TextManagement.Debug;
 
 namespace MessageServer.Models;
 
@@ -13,23 +14,23 @@ public class UserController
     public User? GetUserProfileFromSocketId(int SocketId)
     {
         Console.ForegroundColor = ConsoleColor.DarkMagenta;
-        Console.WriteLine($"Searching for user with SocketId: {SocketId}");
+        LogInfo.Log($"Searching for user with SocketId: {SocketId}");
 
         foreach (var usr in connectedClients.Values)
         {
             Console.ForegroundColor = ConsoleColor.DarkMagenta;
-            Console.WriteLine($"Checking user {usr.GetUserName()} with SocketId: {usr.GetWebSocketID()}");
+            LogInfo.Log($"Checking user {usr.GetUserName()} with SocketId: {usr.GetWebSocketID()}");
 
             if (usr.GetWebSocketID() == SocketId)
             {
-                Console.WriteLine($"Found user: {usr.GetUserName()} with SocketId: { SocketId}");
+                LogInfo.Log($"Found user: {usr.GetUserName()} with SocketId: { SocketId}");
                 Console.ResetColor();
                 return usr;
 				
             }
         }
 
-        Console.WriteLine($"No user found with the given SocketId {SocketId}.");
+        LogInfo.Log($"No user found with the given SocketId {SocketId}.");
         Console.ResetColor();
         return null;
     }
@@ -70,7 +71,7 @@ public class UserController
         if (user == null)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Server Attempted To Remove a Null User");
+            LogInfo.Log("Server Attempted To Remove a Null User");
             Console.ResetColor();
             return;
         }

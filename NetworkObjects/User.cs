@@ -1,6 +1,7 @@
 ﻿using global::System;
 using global::System.Collections.Generic;
 using Newtonsoft.Json;
+using TextManagement.Debug;
 
 namespace NetworkObjects
 {
@@ -81,7 +82,7 @@ namespace NetworkObjects
 
         public static User GetUserFromJson(string jsonString)
         {
-            Console.WriteLine("trying to deserialize user");
+            LogInfo.Log("trying to deserialize user");
             return new User(JsonConvert.DeserializeObject<UserJsonData>(jsonString));
         }
 
@@ -90,7 +91,7 @@ namespace NetworkObjects
             if (user == null)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("SERVER ATTEMPTED TO GetJsonFromUser WITH NULL USER");
+                LogInfo.Log("SERVER ATTEMPTED TO GetJsonFromUser WITH NULL USER");
                 Console.ResetColor();
                 return "";
             }
@@ -99,7 +100,7 @@ namespace NetworkObjects
 
         public static List<User> GetUsersListFromJson(string jsonData)
         {
-            Console.WriteLine("trying to deserialize user list");
+            //LogInfo.Log("trying to deserialize user list");
             List<UserJsonData> usersJsonDataList = JsonConvert.DeserializeObject<List<UserJsonData>>(jsonData);
             List<User> users = new List<User>();
             foreach (var data in usersJsonDataList)

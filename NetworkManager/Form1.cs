@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using NetworkObjects;
+using TextManagement.Debug;
 
 
 namespace NetworkManager;
@@ -11,8 +12,14 @@ public partial class Form1 : Form
 
     public Form1()
     {
+        LogInfo.OnLogUpdate += PrintLogToConsole;
         InitializeComponent();
+        
+    }
 
+    private void PrintLogToConsole(LogInfo.LogData obj)
+    {
+        Console.WriteLine(obj.LogMessage);
     }
 
     private void RefreshUsersButton_Click(object sender, EventArgs e)
