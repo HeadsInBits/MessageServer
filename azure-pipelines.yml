@@ -35,7 +35,7 @@ jobs:
       azureSubscription: 'Manics Dev Subscription(69bc8425-0a8a-4584-bcfd-f98effdeb5e5)'
       appType: 'webApp'
       WebAppName: 'messageserver'
-      packageForLinux: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+      packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
 
 - job: Publish
   displayName: 'Publish Artifact'
