@@ -4,6 +4,7 @@ trigger:
 pool:
   name: Default
 
+
 variables:
   solution: 'MessageServer/MessageServer.csproj'
   buildConfiguration: 'Release'
@@ -19,7 +20,7 @@ jobs:
 
   - script: dotnet build $(solution) --configuration $(buildConfiguration)
     displayName: 'Build the solution'
-
+  
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: '$(Build.SourcesDirectory)'
@@ -27,6 +28,14 @@ jobs:
       archiveType: 'zip'
       archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       replaceExistingArchive: true
+
+  - task: AzureRmWebAppDeployment@4
+    inputs:
+      ConnectionType: 'AzureRM'
+      azureSubscription: 'Manics Dev Subscription(69bc8425-0a8a-4584-bcfd-f98effdeb5e5)'
+      appType: 'webApp'
+      WebAppName: 'messageserver'
+      packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
 
 - job: Publish
   displayName: 'Publish Artifact'
