@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using NetworkObjects;
-using TextManagement.Debug;
+using NetworkObjects.Debug;
 
 
 namespace NetworkManager;

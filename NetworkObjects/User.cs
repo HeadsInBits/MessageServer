@@ -1,7 +1,5 @@
-﻿using global::System;
-using global::System.Collections.Generic;
+﻿using NetworkObjects.Debug;
 using Newtonsoft.Json;
-using TextManagement.Debug;
 
 namespace NetworkObjects
 {

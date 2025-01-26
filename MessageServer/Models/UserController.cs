@@ -2,7 +2,7 @@
 using System.Drawing;
 using MySqlX.XDevAPI;
 using NetworkObjects;
-using TextManagement.Debug;
+using NetworkObjects.Debug;
 
 namespace MessageServer.Models;
 
