@@ -3,9 +3,6 @@ trigger:
 
 pool:
   name: Default
-  demands:
-  - 'agent.os -equals linux'
-  - 'Agent.OSArchitecture -equals ARM'
 
 variables:
   solution: 'MessageServer/MessageServer.csproj'
